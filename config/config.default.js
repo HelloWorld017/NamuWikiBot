@@ -5,5 +5,29 @@ module.exports = {
 	url: "https://namu.wiki/w/",
 	rawUrl: "https://namu.wiki/raw/",
 	maxRedirection: 5,
-	useMarkdown: false
+	useMarkdown: false,
+	remove: {
+		bold: 'tag',
+		italic: 'tag',
+		underline: 'tag',
+		striken: 'whole',
+
+		superscript: 'whole',
+		subscript: 'whole',
+
+		nomarkup: 'tag',
+		size: 'tag',
+		color: 'tag',
+		html: 'whole',
+
+		image: 'as-is',
+		namuimage: 'replace',
+
+		hyperlink: 'latter|noparagraph', //(replace, former, latter, tag, whole)|(paragraph, noparagraph)
+
+		quote: 'replace', //replace changes it to grave accent. Because there is no quote in telegram.
+		line: 'replace',
+		table: 'whole',
+		annotation: 'whole'
+	}
 };

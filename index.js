@@ -1,4 +1,6 @@
-var telegram = require('telegram-bot-api');
+var async = require('async');
+var telegram = require('./telegram-bot');
+var remover = require('./remover.js');
 var request = require('request');
 var config = require('./config/');
 
@@ -40,11 +42,22 @@ api.on('message', function(message){
 				text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
 			}
 
+			/*[].concat.apply([], text.split('').map(function(x,i){
+				return (i % 500) ? [] : text.slice(i, i + 500)
+			})).forEach(function(v){*/
 			api.sendMessage({
 				chat_id: chatId,
 				text: text,
 				parse_mode: 'Markdown'
+			}, function(err, data){
+				if(err){
+					api.sendMessage({
+						chat_id: chatId,
+						text: "오류가 발생했습니다! 사유 : " + err
+					});
+				}
 			});
+			//});
 		});
 	}
 });
@@ -60,7 +73,6 @@ function getNamuwiki(url, callback, redirectionCount){
 			'User-Agent': config.userAgent
 		},
 		url: config.rawUrl + encodeURIComponent(url)
-		//url: config.url + url
 	}, function(err, response, body){
 		console.log(response.statusCode + ': ' + url);
 		if(!err && response.statusCode === 200){
@@ -79,11 +91,14 @@ function getNamuwiki(url, callback, redirectionCount){
 				overview = split[1];
 			}
 
-			overview = overview.replace(/\[\[/g, '').replace(/\]\]/g, '').replace(/\[\*.*\]/g, '').replace(/^attatchment:.*$/mg, '');
-
-			//var $ = cheerio(body);
-			//$('.wiki-inner-content').html().split(/<h[0-9]>.*<\/h[0-9]>/g)
-			callback(undefined, url, overview);
+			async.forEachOfSeries(config.remove, function(v, k, cb){
+				remover[k].remove(v, overview, function(returnVal){
+					overview = returnVal;
+					cb();
+				});
+			}, function(){
+				callback(undefined, url, overview);
+			});
 		}else{
 			callback(new Error(response.statusCode));
 		}
