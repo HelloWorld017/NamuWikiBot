@@ -106,7 +106,6 @@ class HyperlinkRemover extends Remover{
 
 			case 'latter':
 				text = text.replace(this.regex, function(match, p1, p2){
-					console.log(match + ", " + p1 + ", " + p2);
 					if(!p2){
 						if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', '');
 						return p1;
