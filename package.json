@@ -1,0 +1,29 @@
+{
+  "name": "namuwikibot",
+  "version": "0.1.1",
+  "description": "A telegram bot which searches namu.wiki.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "request": "^2.67.0",
+    "telegram-bot-api": "^0.3.2",
+	"object-merge": "^2.5.1"
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HelloWorld017/NamuWikiBot.git"
+  },
+  "keywords": [
+    "Namuwiki",
+    "Telegram"
+  ],
+  "author": "Khinenw",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/HelloWorld017/NamuWikiBot/issues"
+  },
+  "homepage": "https://github.com/HelloWorld017/NamuWikiBot#readme"
+}

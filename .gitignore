@@ -1,0 +1,5 @@
+*.webp 
+*.log
+
+config/config.custom.js
+node_modules/
