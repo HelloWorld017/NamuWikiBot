@@ -29,7 +29,7 @@ api.on('message', function(message){
 			if(err){
 				api.sendSticker({
 					chat_id: chatId,
-					sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)];
+					sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)]
 				});
 				return;
 			}
