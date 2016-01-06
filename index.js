@@ -20,8 +20,7 @@ api.on('message', function(message){
 		if(url === ''){
 			api.sendMessage({
 				chat_id: chatId,
-				text: '사용법: /nw [검색할 무언가]',
-				parse_mode: 'Markdown'
+				text: '사용법: /nw [검색할 무언가]\n개발자: @Khinenw\n사용한 이미지: 무냐 by eb\n세피로트 by SMINORFF_KAMCHATKA\n사용된 이미지는 모두 CC-BY-NC-SA 2.0 조건 하에 배포되고 있습니다.',
 			});
 			return;
 		}
@@ -30,7 +29,7 @@ api.on('message', function(message){
 			if(err){
 				api.sendSticker({
 					chat_id: chatId,
-					sticker: config.failSticker
+					sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)];
 				});
 				return;
 			}
@@ -42,22 +41,32 @@ api.on('message', function(message){
 				text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
 			}
 
-			/*[].concat.apply([], text.split('').map(function(x,i){
-				return (i % 500) ? [] : text.slice(i, i + 500)
-			})).forEach(function(v){*/
-			api.sendMessage({
-				chat_id: chatId,
-				text: text,
-				parse_mode: 'Markdown'
-			}, function(err, data){
-				if(err){
-					api.sendMessage({
-						chat_id: chatId,
-						text: "오류가 발생했습니다! 사유 : " + err
-					});
-				}
+			text.match(/.{1,500}/g).forEach(function(v){
+				api.sendMessage({
+					chat_id: chatId,
+					text: text,
+					parse_mode: 'Markdown'
+				}, function(err, data){
+					if(err){
+						api.sendMessage({
+							chat_id: chatId,
+							text: text
+						}, function(err2, data2){
+							api.sendMessage({
+								chat_id: chatId,
+								text: "요청을 처리하는 도중 서버측에서 오류가 발생했습니다!:(\n@Khinenw 에게 제보하여주시면 감사하겠습니다!"
+							});
+
+							console.log("=======Starting error report=======");
+							console.log("Time : " + (new Date()).toUTCString());
+							console.log("Error 1 : " + err);
+							console.log("Error 2 : " + err);
+							console.log("URL : " + url);
+							console.log("========End of error report========");
+						});
+					}
+				});
 			});
-			//});
 		});
 	}
 });

@@ -32,6 +32,7 @@ class AnnotationRemover extends Remover{
 	}
 }
 
+//attachment:주소 형식의 이미지 제거
 class AttachmentRemover extends Remover{
 	constructor(){
 		super();
@@ -41,7 +42,7 @@ class AttachmentRemover extends Remover{
 	remove(type, text, cb){
 		switch(type){
 			case 'tag':
-				text = text.replace(this.regex, '');
+				text = text.replace(this.regex, '$1');
 				break;
 
 			case 'whole':
@@ -206,7 +207,7 @@ class SimpleTagRemover extends Remover{
 				break;
 
 			case 'whole':
-				text = text.replace(new RegExp(this.tag + ".*" + this.tag, 'g'), '');
+				text = text.replace(new RegExp(this.tag + ".*?" + this.tag, 'g'), '');
 				break;
 		}
 
@@ -220,7 +221,7 @@ module.exports = {
 	underline: new SimpleTagRemover("__"),
 	striken: new MultipleDefinitionRemover(new SimpleTagRemover("--", "~~"), new SimpleTagRemover("~~", "~~")),
 
-	superscript: new SimpleTagRemover("^^"),
+	superscript: new SimpleTagRemover("\\^\\^"),
 	subscript: new SimpleTagRemover(",,"),
 
 	nomarkup: new BraceRemover(""),
