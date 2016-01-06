@@ -20,6 +20,7 @@ module.exports = {
 		color: 'tag',
 		html: 'whole',
 
+		attachment: 'whole',
 		image: 'as-is',
 		namuimage: 'replace',
 

@@ -32,19 +32,20 @@ class AnnotationRemover extends Remover{
 	}
 }
 
-class AttatchmentRemover extends Remover{
+class AttachmentRemover extends Remover{
 	constructor(){
 		super();
+		this.regex = /^attachment[ ]*:[ ]*(.*\..*)$/mg;
 	}
 
 	remove(type, text, cb){
 		switch(type){
 			case 'tag':
-				text = text.replace(/attatchment:[ ]*/g, '');
+				text = text.replace(this.regex, '');
 				break;
 
 			case 'whole':
-				text = text.replace(/^attatchment:.*$/mg, '');
+				text = text.replace(this.regex, '');
 				break;
 		}
 
@@ -227,6 +228,7 @@ module.exports = {
 	size: new BraceRemover("\\+[0-5]"),
 	color: new BraceRemover("#[a-zA-Z0-9]+"),
 
+	attachment: new AttachmentRemover(),
 	image: new ImageRemover(),
 	namuimage: new NamuImageRemover(),
 
