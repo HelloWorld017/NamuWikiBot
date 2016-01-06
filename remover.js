@@ -158,10 +158,21 @@ class MultipleDefinitionRemover extends Remover{
 class NamuImageRemover extends Remover{
 	constructor(){
 		super();
+		this.regex = /\[\[파일:([^\[\]]*?)\]\]/g;
 	}
 
 	remove(type, text, cb){
-		cb((type === 'whole') ? text.replace(/\[\[파일:.*\]\]/g, '') : text);
+		switch(type){
+			case 'whole':
+				text = text.replace(this.regex, '');
+				break;
+
+			case 'replace':
+				text = text.replace(this.regex, '$1');
+				break;
+		}
+
+		cb(text);
 	}
 }
 

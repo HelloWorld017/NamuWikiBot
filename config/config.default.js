@@ -9,7 +9,7 @@ module.exports = {
 	url: "https://namu.wiki/w/",
 	rawUrl: "https://namu.wiki/raw/",
 	maxRedirection: 5,
-	useMarkdown: false,
+	useMarkdown: true,
 	remove: {
 		bold: 'tag',
 		italic: 'tag',
@@ -34,5 +34,6 @@ module.exports = {
 		line: 'replace',
 		table: 'whole',
 		annotation: 'whole'
-	}
+	},
+	split: false
 };

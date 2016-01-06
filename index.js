@@ -41,35 +41,68 @@ api.on('message', function(message){
 				text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
 			}
 
-			text.match(/.{1,500}/g).forEach(function(v){
-				api.sendMessage({
-					chat_id: chatId,
-					text: text,
-					parse_mode: 'Markdown'
-				}, function(err, data){
-					if(err){
-						api.sendMessage({
-							chat_id: chatId,
-							text: text
-						}, function(err2, data2){
-							api.sendMessage({
-								chat_id: chatId,
-								text: "요청을 처리하는 도중 서버측에서 오류가 발생했습니다!:(\n@Khinenw 에게 제보하여주시면 감사하겠습니다!"
-							});
+			if(config.split && text.length > 2048){
+				// 2048 쪼개서 보낸다. 쪼갤 경우 마크다운 오류가 발생하기 쉬우므로 그냥 보낸다.
+				if(config.useMarkdown) text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
 
-							console.log("=======Starting error report=======");
-							console.log("Time : " + (new Date()).toUTCString());
-							console.log("Error 1 : " + err);
-							console.log("Error 2 : " + err);
-							console.log("URL : " + url);
-							console.log("========End of error report========");
-						});
-					}
+				text.match(/[^]{1,2048}/g).forEach(function(v){
+					api.sendMessage({
+						chat_id: chatId,
+						text: v
+					}, function(err, data){
+						if(err){
+							log({
+								'Time': (new Date()).toUTCString(),
+								'Error 1': err.toString(),
+								'URL': url
+							});
+						}
+					});
 				});
+
+				return;
+			}
+
+			api.sendMessage({
+				chat_id: chatId,
+				text: text,
+				parse_mode: 'Markdown'
+			}, function(err, data){
+				if(err){
+					// 에러가 마크다운에 의해 발생했을 경우, 마크다운 없이 보내본다.
+					if(config.useMarkdown) text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
+					api.sendMessage({
+						chat_id: chatId,
+						text: text
+					}, function(err2, data2){
+						if(err2){
+							// 마크다운 오류도 아니므로 오류 메시지와 함께 처리
+							log({
+								'Time': (new Date()).toUTCString(),
+								'Error 1': err.toString(),
+								'Error 2': err2.toString(),
+								'URL': url
+							});
+						}
+					});
+				}
 			});
 		});
 	}
 });
+
+function log(logContents){
+	api.sendMessage({
+		chat_id: chatId,
+		text: "요청을 처리하는 도중 서버측에서 오류가 발생했습니다!:(\n@Khinenw 에게 제보하여주시면 감사하겠습니다!"
+	});
+
+	console.log("=======Starting error report=======");
+	async.forEachOfSeries(function(v, k){
+		console.log(k + " : " + v);
+	});
+	console.log("========End of error report========");
+}
 
 function getNamuwiki(url, callback, redirectionCount){
 	if(redirectionCount === undefined) redirectionCount = 0;
