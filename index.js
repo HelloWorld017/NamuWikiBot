@@ -1,4 +1,5 @@
 var async = require('async');
+var chalk = require('chalk');
 var telegram = require('./telegram-bot');
 var remover = require('./remover.js');
 var request = require('request');
@@ -55,7 +56,7 @@ api.on('message', function(message){
 								'Time': (new Date()).toUTCString(),
 								'Error 1': err.toString(),
 								'URL': url
-							});
+							}, chatId);
 						}
 					});
 				});
@@ -82,7 +83,7 @@ api.on('message', function(message){
 								'Error 1': err.toString(),
 								'Error 2': err2.toString(),
 								'URL': url
-							});
+							}, chatId);
 						}
 					});
 				}
@@ -91,17 +92,17 @@ api.on('message', function(message){
 	}
 });
 
-function log(logContents){
+function log(logContents, chatId){
 	api.sendMessage({
 		chat_id: chatId,
 		text: "요청을 처리하는 도중 서버측에서 오류가 발생했습니다!:(\n@Khinenw 에게 제보하여주시면 감사하겠습니다!"
 	});
 
-	console.log("=======Starting error report=======");
+	console.log(chalk.bgRed("=======Starting error report======="));
 	async.forEachOfSeries(function(v, k){
-		console.log(k + " : " + v);
+		console.log(chalk.yellow(k + " : " + v));
 	});
-	console.log("========End of error report========");
+	console.log(chalk.bgRed("========End of error report========"));
 }
 
 function getNamuwiki(url, callback, redirectionCount){
@@ -116,7 +117,7 @@ function getNamuwiki(url, callback, redirectionCount){
 		},
 		url: config.rawUrl + encodeURIComponent(url)
 	}, function(err, response, body){
-		console.log(response.statusCode + ': ' + url);
+		console.log(chalk.cyan(response.statusCode + ': ' + url + ' - ' + (new Date()).toUTCString()));
 		if(!err && response.statusCode === 200){
 			if(body.includes('#redirect ')){
 				var redirectionTarget = body.match(/^#redirect .*$/m)[0].replace('#redirect ', '');
