@@ -236,7 +236,7 @@ module.exports = {
 	subscript: new SimpleTagRemover(",,"),
 
 	nomarkup: new BraceRemover(""),
-	html: new BraceRemover("#!html"),
+	html: new BraceRemover("#!html|<div style=|".+">|<\\/div>"),
 	size: new BraceRemover("\\+[0-5]"),
 	color: new BraceRemover("#[a-zA-Z0-9]+"),
 
