@@ -14,7 +14,7 @@ class Remover{
 class AnnotationRemover extends Remover{
 	constructor(){
 		super();
-		this.regex = /ㅈㅈ\[\*[^ ]*[ ]*(.+?)[^\]][\]]{1}(?!\]+)/g;
+		this.regex = /\[\*[^ ]*[ ]*(.+?)[^\]][\]]{1}(?!\]+)/g;
 	}
 
 	remove(type, text, cb){
@@ -235,9 +235,6 @@ module.exports = {
 	superscript: new SimpleTagRemover("\\^\\^"),
 	subscript: new SimpleTagRemover(",,"),
 
-	// #!html
-	// <div "html_tag"> "문서내용"
-	// #!html </div>
 	nomarkup: new BraceRemover(""),
 	html: new BraceRemover("#!html|<div style=|".+">|<\\/div>"),
 	size: new BraceRemover("\\+[0-5]"),
