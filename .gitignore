@@ -1,4 +1,5 @@
 *.log
+*.bak
 
 config/config.custom.js
 node_modules/

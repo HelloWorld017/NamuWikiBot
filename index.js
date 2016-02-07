@@ -1,8 +1,10 @@
 var async = require('async');
 var chalk = require('chalk');
+var cloudscraper = require('cloudscraper');
+var util = require('util');
+
 var telegram = require('./telegram-bot');
 var remover = require('./remover.js');
-var request = require('request');
 var config = require('./config/');
 
 var api = new telegram({
@@ -17,7 +19,7 @@ api.on('message', function(message){
 	if(typeof message.text !== 'string') return;
 
 	if(message.text.startsWith('/nw')){
-		var url = message.text.replace(/^\/nw(?:[@]*[a-zA-Z0-9]*)[ ]*/, '');
+		var url = message.text.replace(/^\/nw(?:@[a-zA-Z0-9]*)?[ ]*/, '');
 		if(url === ''){
 			api.sendMessage({
 				chat_id: chatId,
@@ -26,12 +28,23 @@ api.on('message', function(message){
 			return;
 		}
 
-		getNamuwiki(url, function(err, url, overview){
+		getNamuwiki(chatId, url, function(err, url, overview){
 			if(err){
-				api.sendSticker({
-					chat_id: chatId,
-					sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)]
-				});
+				if(err === 404){
+					api.sendSticker({
+						chat_id: chatId,
+						sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)]
+					});
+					return;
+				}
+
+				if(err === 503){
+					api.sendMessage({
+						chat_id: chatId,
+						text: "현재 Cloudflare DDoS 프로텍션 때문에 문서에 접근이 불가합니다."
+					});
+					return;
+				}
 				return;
 			}
 
@@ -54,7 +67,7 @@ api.on('message', function(message){
 						if(err){
 							log({
 								'Time': (new Date()).toUTCString(),
-								'Error 1': err.toString(),
+								'Error 1': util.inspect(err),
 								'URL': url
 							}, chatId);
 						}
@@ -80,8 +93,8 @@ api.on('message', function(message){
 							// 마크다운 오류도 아니므로 오류 메시지와 함께 처리
 							log({
 								'Time': (new Date()).toUTCString(),
-								'Error 1': err.toString(),
-								'Error 2': err2.toString(),
+								'Error 1': util.inspect(err),
+								'Error 2': util.inspect(err2),
 								'URL': url
 							}, chatId);
 						}
@@ -95,33 +108,41 @@ api.on('message', function(message){
 function log(logContents, chatId){
 	api.sendMessage({
 		chat_id: chatId,
-		text: "요청을 처리하는 도중 서버측에서 오류가 발생했습니다!:(\n@Khinenw 에게 제보하여주시면 감사하겠습니다!"
+		text: "요청을 처리하는 도중 서버측에서 오류가 발생했습니다! :(\n@Khinenw 에게 제보하여주시면 감사하겠습니다!"
 	});
 
 	console.log(chalk.bgRed("=======Starting error report======="));
-	async.forEachOfSeries(function(v, k){
+	async.forEachOfSeries(logContents, function(v, k, cb){
 		console.log(chalk.yellow(k + " : " + v));
+		cb();
+	}, function(){
+		console.log(chalk.bgRed("========End of error report========"));
 	});
-	console.log(chalk.bgRed("========End of error report========"));
 }
 
-function getNamuwiki(url, callback, redirectionCount){
+function getNamuwiki(chatId, url, callback, redirectionCount, cookie){
 	if(redirectionCount === undefined) redirectionCount = 0;
 	if(redirectionCount > config.maxRedirection){
 		callback(new Error("Too many redirections!"));
 	}
 
-	request.get({
+	if(cookie === undefined){
+		cookie = "";
+	}
+
+	cloudscraper.request({
+		'method': 'get',
 		headers: {
 			'User-Agent': config.userAgent
 		},
 		url: config.rawUrl + encodeURIComponent(url)
 	}, function(err, response, body){
-		console.log(chalk.cyan(response.statusCode + ': ' + url + ' - ' + (new Date()).toUTCString()));
 		if(!err && response.statusCode === 200){
+			console.log(chalk.cyan(response.statusCode + ': ' + url));
+
 			if(body.includes('#redirect ')){
 				var redirectionTarget = body.match(/^#redirect .*$/m)[0].replace('#redirect ', '');
-				getNamuwiki(redirectionTarget, callback, redirectionCount + 1);
+				getNamuwiki(chatId, redirectionTarget, callback, redirectionCount + 1);
 				return;
 			}
 
@@ -143,7 +164,9 @@ function getNamuwiki(url, callback, redirectionCount){
 				callback(undefined, url, overview);
 			});
 		}else{
+			console.log(chalk.yellow(response.statusCode + ': ' + url));
 			callback(new Error(response.statusCode));
+			return;
 		}
 	});
 }

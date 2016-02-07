@@ -19,10 +19,10 @@ module.exports = {
 		superscript: 'whole',
 		subscript: 'whole',
 
-		nomarkup: 'tag',
+		html: 'whole',
 		size: 'tag',
 		color: 'tag',
-		html: 'whole',
+		nomarkup: 'tag',
 
 		attachment: 'whole',
 		image: 'as-is',
@@ -32,8 +32,9 @@ module.exports = {
 
 		quote: 'replace', //replace changes it to grave accent. Because there is no quote in telegram.
 		line: 'replace',
-		table: 'whole',
-		annotation: 'whole'
+		table: 'tag',
+		include: 'whole',
+		footnote: 'whole'
 	},
 	split: false
 };

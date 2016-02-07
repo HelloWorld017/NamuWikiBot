@@ -10,28 +10,6 @@ class Remover{
 		cb(new Error("Undefined method called!"));
 	}
 }
-
-class AnnotationRemover extends Remover{
-	constructor(){
-		super();
-		this.regex = /\[\*[^ ]*[ ]*(.+?)[^\]][\]]{1}(?!\]+)/g;
-	}
-
-	remove(type, text, cb){
-		switch(type){
-			case 'tag':
-				text = text.replace(this.regex, '$1');
-				break;
-
-			case 'whole':
-				text = text.replace(this.regex, '');
-				break;
-		}
-
-		cb(text);
-	}
-}
-
 //attachment:주소 형식의 이미지 제거
 class AttachmentRemover extends Remover{
 	constructor(){
@@ -63,11 +41,32 @@ class BraceRemover extends Remover{
 	remove(type, text, cb){
 		switch(type){
 			case 'tag':
-				text = text.replace(new RegExp("\{\{\{" + this.tag, 'g'), '').replace(/\}\}\}/g, '');
+				text = text.replace(new RegExp("{{{" + this.tag, 'g'), '').replace(/}}}/g, '');
 				break;
 
 			case 'whole':
-				text = text.replace(new RegExp("\{\{\{" + this.tag + ".*\}\}\}", 'g'), '');
+				text = text.replace(new RegExp("{{{" + this.tag + "[^]*?}}}", 'g'), '');
+				break;
+		}
+
+		cb(text);
+	}
+}
+
+class FootnoteRemover extends Remover{
+	constructor(){
+		super();
+		this.regex = /\[\*[^ ]*[ ]*(.+?)[^\]][\]]{1}(?!\]+)/g;
+	}
+
+	remove(type, text, cb){
+		switch(type){
+			case 'tag':
+				text = text.replace(this.regex, '$1');
+				break;
+
+			case 'whole':
+				text = text.replace(this.regex, '');
 				break;
 		}
 
@@ -133,6 +132,35 @@ class ImageRemover extends Remover{
 
 	remove(type, text, cb){
 		 cb((type === 'whole') ? text.replace(/((https|http)?:\/\/[^ ]+\.(jpg|jpeg|png|gif))(?:\?([^ ]+))?/ig, '') : text);
+	}
+}
+
+class IncludeRemover extends Remover{
+	constructor(){
+		super();
+	}
+
+	remove(type, text, cb){
+		if(type === "whole"){
+			text = text.replace(/include\[\(.*\)\]/ig, '').replace(/include\(.*\)/ig, '');
+		}
+
+		cb(text);
+	}
+}
+
+class LineBreakRemover extends Remover{
+	constructor(){
+		super();
+	}
+
+	remove(type, text, cb){
+		switch(type){
+			case "whole": text = text.replace(/\[br\]/g, ''); break;
+			case "replace": text = text.replace(/\[br\]/g, '\n'); break;
+		}
+
+		cb(text);
 	}
 }
 
@@ -226,6 +254,32 @@ class SimpleTagRemover extends Remover{
 	}
 }
 
+class TableRemover extends Remover{
+	constructor(){
+		super();
+	}
+
+	remove(type, text, cb){
+		switch(type){
+			case 'tag':
+				text = text
+					.replace(/<#[a-fA-F0-9]{3,6}?>/g, '') //<#000000> 꼴 제거
+					.replace(/\|\|/g, '') // || 제거
+					.replace(/<\|[0-9]+>/g, '') //<|숫자> 꼴 제거
+					.replace(/<-[0-9]+>/g, '') //<-숫자> 꼴 제거
+					.replace(/<table.*?=.*?>/g, '') //<table???=???> 꼴 제거
+					.replace(/<v\|[0-9]+>/g, '') //<v|숫자>
+					.replace(/<\)>/g, '') //<)> 제거
+					.replace(/<\(>/g, '') //<(> 제거
+					.replace(/<:>/g, '') //<:> 제거
+					.replace(/<(bgcolor|rowbgcolor|width|height)=.*?>/g, '') //<???=???> 꼴 제거
+					.replace(/\|.*?\|/g, ''); //캡션
+		}
+
+		cb(text);
+	}
+}
+
 module.exports = {
 	bold: new SimpleTagRemover("'''", "**"),
 	italic: new SimpleTagRemover("''", "*"),
@@ -235,10 +289,10 @@ module.exports = {
 	superscript: new SimpleTagRemover("\\^\\^"),
 	subscript: new SimpleTagRemover(",,"),
 
-	nomarkup: new BraceRemover(""),
 	html: new BraceRemover("#!html"),
 	size: new BraceRemover("\\+[0-5]"),
 	color: new BraceRemover("#[a-zA-Z0-9]+"),
+	nomarkup: new BraceRemover(""),
 
 	attachment: new AttachmentRemover(),
 	image: new ImageRemover(),
@@ -248,6 +302,7 @@ module.exports = {
 
 	quote: new QuoteRemover(),
 	line: new SimpleTagRemover("\\[br\\]", "\n"),
-	table: new SimpleTagRemover("\\|\\|"),
-	annotation: new AnnotationRemover()
+	table: new TableRemover(),
+	include: new IncludeRemover(),
+	footnote: new FootnoteRemover()
 };
