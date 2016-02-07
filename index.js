@@ -120,14 +120,10 @@ function log(logContents, chatId){
 	});
 }
 
-function getNamuwiki(chatId, url, callback, redirectionCount, cookie){
+function getNamuwiki(chatId, url, callback, redirectionCount){
 	if(redirectionCount === undefined) redirectionCount = 0;
 	if(redirectionCount > config.maxRedirection){
 		callback(new Error("Too many redirections!"));
-	}
-
-	if(cookie === undefined){
-		cookie = "";
 	}
 
 	cloudscraper.request({
