@@ -55,11 +55,11 @@ api.on('message', function(message){
 				text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
 			}
 
-			if(config.split && text.length > 2048){
+			if(config.split && text.length > 4000){
 				// 2048 쪼개서 보낸다. 쪼갤 경우 마크다운 오류가 발생하기 쉬우므로 그냥 보낸다.
 				if(config.useMarkdown) text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
 
-				text.match(/[^]{1,2048}/g).forEach(function(v){
+				async.eachSeries(text.match(/[^]{1,4000}/g), function(v, cb){
 					api.sendMessage({
 						chat_id: chatId,
 						text: v
@@ -71,6 +71,8 @@ api.on('message', function(message){
 								'URL': url
 							}, chatId);
 						}
+
+						cb();
 					});
 				});
 

@@ -36,5 +36,5 @@ module.exports = {
 		include: 'whole',
 		footnote: 'whole'
 	},
-	split: false
+	split: true
 };
