@@ -18,26 +18,27 @@ var namuwikiReqIds = [];
 
 api.on('message', function(message){
 	var chatId = message.chat.id;
+	var from = message.from.id;
 	if(typeof message.text !== 'string') return;
 
 	if(message.text.startsWith('/nw')){
-		if(namuwikiReqIds[chatId] !== undefined){
-			if(namuwikiReqIds[chatId].date < Date.now()){
-				namuwikiReqIds[chatId].count = 0;
-				namuwikiReqIds[chatId].date = Date.now() + 60000
+		if(namuwikiReqIds[from] !== undefined){
+			if(namuwikiReqIds[from].date < Date.now()){
+				namuwikiReqIds[from].count = 0;
+				namuwikiReqIds[from].date = Date.now() + 60000;
 			}
 			
-			if(namuwikiReqIds[chatId].count >= 5){
+			if(namuwikiReqIds[from].count >= 5){
 				api.sendMessage({
 					chat_id: chatId,
-					text: "조금 있다가 해보세요!\n(현재 60초에 명령어 5개로 제한하고 있습니다.)\n나무위키 본관측에 많은 트래픽이 가는 것을 막기위한 조치이니 협조해주시면 감사하겠습니다!"
+					text: "조금 있다가 해보세요!\n(현재 60초에 명령어 5개로 제한하고 있습니다.)\n나무위키 본관측에 많은 트래픽이 가는 것을 방지하기 위한 조치이니 협조해주시면 감사하겠습니다!"
 				});
 				return;
 			}
 			
-			namuwikiReqIds[chatId].count++;
+			namuwikiReqIds[from].count++;
 		}else{
-			namuwikiReqIds[chatId] = {
+			namuwikiReqIds[from] = {
 				count: 0,
 				date: Date.now() + 60000
 			};
