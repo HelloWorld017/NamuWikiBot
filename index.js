@@ -39,7 +39,7 @@ api.on('message', function(message){
 			namuwikiReqIds[chatId].count++;
 		}else{
 			namuwikiReqIds[chatId] = {
-				count: 0;
+				count: 0,
 				date: Date.now() + 60000
 			};
 		}
