@@ -1,6 +1,6 @@
 var async = require('async');
 var chalk = require('chalk');
-var cloudscraper = require('cloudscraper');
+var request = require('request');
 var util = require('util');
 
 var telegram = require('./telegram-bot');
@@ -128,7 +128,7 @@ function getNamuwiki(chatId, url, callback, redirectionCount){
 		callback(new Error("Too many redirections!"));
 	}
 
-	cloudscraper.request({
+	request({
 		'method': 'get',
 		headers: {
 			'User-Agent': config.userAgent
