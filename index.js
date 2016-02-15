@@ -22,10 +22,9 @@ api.on('message', function(message){
 
 	if(message.text.startsWith('/nw')){
 		if(namuwikiReqIds[chatId] !== undefined){
-			if(namuwikiReqIds[chatId].date > Date.now()){
+			if(namuwikiReqIds[chatId].date < Date.now()){
 				namuwikiReqIds[chatId].count = 0;
 				namuwikiReqIds[chatId].date = Date.now() + 60000
-				return;
 			}
 			
 			if(namuwikiReqIds[chatId].count >= 5){
