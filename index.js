@@ -188,7 +188,7 @@ function getNamuwiki(chatId, url, callback, redirectionCount){
 			});
 		}else{
 			console.log(chalk.yellow(response.statusCode + ': ' + url));
-			callback(new Error(response.statusCode));
+			callback(response.statusCode);
 			return;
 		}
 	});
