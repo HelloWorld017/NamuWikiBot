@@ -2,8 +2,8 @@ var async = require('async');
 var chalk = require('chalk');
 var request = require('request');
 var util = require('util');
+var telegram = require('telegram-bot-api');
 
-var telegram = require('telegram-bot');
 var remover = require('./remover.js');
 var config = require('./config/');
 
