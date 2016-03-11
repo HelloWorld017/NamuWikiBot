@@ -24,11 +24,11 @@ module.exports = {
 		color: 'tag',
 		nomarkup: 'tag',
 
-		attachment: 'whole',
-		image: 'as-is',
+		attachment: 'replace',
+		image: 'replace',
 		namuimage: 'replace',
 
-		hyperlink: 'latter|noparagraph', //(replace, former, latter, tag, whole)|(paragraph, noparagraph)
+		hyperlink: 'replace|noparagraph', //(replace, former, latter, tag, whole)|(paragraph, noparagraph)
 
 		quote: 'replace', //replace changes it to grave accent. Because there is no quote in telegram.
 		line: 'replace',

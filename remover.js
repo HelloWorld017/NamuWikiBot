@@ -19,6 +19,10 @@ class AttachmentRemover extends Remover{
 
 	remove(type, text, cb){
 		switch(type){
+			case 'replace':
+				text = text.replace(this.regex, '[이미지](https://attach.namu.wiki/$1)');
+				break;
+				
 			case 'tag':
 				text = text.replace(this.regex, '$1');
 				break;
@@ -85,17 +89,20 @@ class HyperlinkRemover extends Remover{
 		var type = split[0];
 		var paragraph = split[1];
 
-		if(type === 'whole') return text.replace(/\[\[[^\[\]]*\]\]/g, '');
 		if(paragraph === 'noparagraph') text = text.replace(/\[\[#s-\d(\.\d)*(?:\|.*)?\]\]/g, '');
 
 		switch(type){
+			case 'whole':
+				cb(text.replace(/\[\[[^\[\]]*\]\]/g, ''));
+				return;
+
 			case 'replace':
 				text = text.replace(this.regex, function(match, p1, p2){
 					if(!p2){
 						if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', '');
 						return p1;
 					}
-					return p2 + '(' + p1 + ')';
+					return '[' + p2 + ']' + '(' + p1 + ')';
 				});
 
 			case 'former':
@@ -128,10 +135,16 @@ class HyperlinkRemover extends Remover{
 class ImageRemover extends Remover{
 	constructor(){
 		super();
+		this.regex = /((https|http)?:\/\/[^ ]+\.(jpg|jpeg|png|gif))(?:\?([^ ]+))?/ig;
 	}
 
 	remove(type, text, cb){
-		 cb((type === 'whole') ? text.replace(/((https|http)?:\/\/[^ ]+\.(jpg|jpeg|png|gif))(?:\?([^ ]+))?/ig, '') : text);
+		 switch(type){
+			 case whole: text = text.replace(regex, ''); break;
+			 case replace: text = text.replace(regex, '[이미지]($1)'); break;
+		 }
+
+		 cb(text);
 	}
 }
 
@@ -189,14 +202,14 @@ class NamuImageRemover extends Remover{
 		this.regex = /\[\[파일:([^\[\]]*?)\]\]/g;
 	}
 
-	remove(type, text, cb){
+	remove(type, text, cb, query){
 		switch(type){
 			case 'whole':
 				text = text.replace(this.regex, '');
 				break;
 
 			case 'replace':
-				text = text.replace(this.regex, '$1');
+				text = text.replace(this.regex, '[이미지](https://namu.wiki/file/$1)');
 				break;
 		}
 
