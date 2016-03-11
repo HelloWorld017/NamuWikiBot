@@ -1,4 +1,6 @@
 var async = require('async');
+var cheerio = require('cheerio');
+//var crypto = require('crypto');
 var chalk = require('chalk');
 var request = require('request');
 var util = require('util');
@@ -15,6 +17,9 @@ var api = new telegram({
 });
 
 var namuwikiReqIds = [];
+var inlineSession = {};
+var lastRequest = 0;
+var inlineId = 0;
 
 api.on('message', function(message){
 	var chatId = message.chat.id;
@@ -22,28 +27,13 @@ api.on('message', function(message){
 	if(typeof message.text !== 'string') return;
 
 	if(message.text.startsWith('/nw')){
-		if(namuwikiReqIds[from] !== undefined){
-			if(namuwikiReqIds[from].date < Date.now()){
-				namuwikiReqIds[from].count = 0;
-				namuwikiReqIds[from].date = Date.now() + 60000;
-			}
-			
-			if(namuwikiReqIds[from].count >= 5){
-				api.sendMessage({
-					chat_id: chatId,
-					text: "조금 있다가 해보세요!\n(현재 60초에 명령어 5개로 제한하고 있습니다.)\n나무위키 본관측에 많은 트래픽이 가는 것을 방지하기 위한 조치이니 협조해주시면 감사하겠습니다!"
-				});
-				return;
-			}
-			
-			namuwikiReqIds[from].count++;
-		}else{
-			namuwikiReqIds[from] = {
-				count: 0,
-				date: Date.now() + 60000
-			};
+		if(attempt(from, chatId)){
+			api.sendMessage({
+				chat_id: chatId,
+				text: "조금 있다가 해보세요!\n(현재 60초에 명령어 " + config.commandAmount + "개로 제한하고 있습니다.)\n나무위키 본관측에 많은 트래픽이 가는 것을 방지하기 위한 조치이니 협조해주시면 감사하겠습니다!"
+			});
 		}
-		
+
 		var url = message.text.replace(/^\/nw(?:@[a-zA-Z0-9]*)?[ ]*/, '');
 		if(url === ''){
 			api.sendMessage({
@@ -53,7 +43,7 @@ api.on('message', function(message){
 			return;
 		}
 
-		getNamuwiki(chatId, url, function(err, url, overview){
+		getNamuwiki(url, function(err, url, overview){
 			if(err){
 				if(err === 404){
 					api.sendSticker({
@@ -81,20 +71,28 @@ api.on('message', function(message){
 			}
 
 			if(config.split && text.length > 4000){
-				// 2048 쪼개서 보낸다. 쪼갤 경우 마크다운 오류가 발생하기 쉬우므로 그냥 보낸다.
-				if(config.useMarkdown) text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
-
 				async.eachSeries(text.match(/[^]{1,4000}/g), function(v, cb){
 					api.sendMessage({
 						chat_id: chatId,
-						text: v
+						text: v,
+						parse_mode: 'Markdown'
 					}, function(err, data){
 						if(err){
-							log({
-								'Time': (new Date()).toUTCString(),
-								'Error 1': util.inspect(err),
-								'URL': url
-							}, chatId);
+							api.sendMessage({
+								chat_id: chatId,
+								text: v
+							}, (err, data) => {
+								if(err){
+									log({
+										'Time': (new Date()).toUTCString(),
+										'Error 1': util.inspect(err),
+										'URL': url
+									}, chatId);
+								}
+
+								cb();
+							});
+							return;
 						}
 
 						cb();
@@ -132,6 +130,115 @@ api.on('message', function(message){
 	}
 });
 
+api.on('inline.query', (query) => {
+	if(inlineSession[query.from.id] === undefined){
+		inlineSession[query.from.id] = [];
+	}
+
+	inlineSession[query.from.id] = {
+		query: query,
+		time: Date.now() + config.querySpeed
+	};
+});
+
+setInterval(() => {
+	async.forEachOfSeries(inlineSession, (v, k, asyncCallback) => {
+		if(v.done) return;
+		if(Date.now() < v.time) return;
+
+		inlineSession[k].done = true;
+
+		var query = v.query;
+		if(attempt(query.from.id)) return;
+
+		request({
+			method: 'get',
+			headers: {
+				'User-Agent': config.userAgent
+			},
+			url: config.searchUrl + encodeURIComponent(query.query)
+		}, (err, response, body) => {
+			if(!err && response.statusCode === 200){
+				var $ = cheerio.load(body);
+				var hrefs = $('article.wiki-article>ul>li>a');
+				var results = [];
+
+				async.eachSeries(Array.apply(null, Array(config.inlineAmount)).map((v, k) => {return k;}), (i, cb) => {
+					if(hrefs.length > i){
+						getNamuwiki(decodeURIComponent($(hrefs.get(i)).attr('href').replace('/w/', '')), (err, url, overview) => {
+							if(err){
+								return;
+							}
+
+							results.push({
+								type: 'article',
+								//id: crypto.createHash('md5').update(url).digest('hex'),
+								id: (++inlineId) + '',
+								title: url,
+								message_text: '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + encodeURIComponent(url) + ')',
+								parse_mode: 'Markdown',
+								url: config.url + encodeURIComponent(url)
+							});
+							cb();
+						}, 0, true);
+					}
+				}, () => {
+					api.answerInlineQuery({
+						inline_query_id: query.id,
+						results: results
+					}, (err, res) => {
+						if(err){
+							console.log(chalk.bgRed(util.inspect(err)));
+							return;
+						}
+						asyncCallback();
+					});
+				});
+
+				/*async.mapSeries($('article.wiki-article>ul>li>a').get(), function(el, cb){
+				 	//Not lazy T_T
+					i++;
+					if(i > config.inlineAmount){
+						//cb(true);
+						cb(null, undefined);
+						return;
+					}
+
+					getNamuwiki(decodeURIComponent($(el).attr('href').replace('/w/', '')), (err, url, overview) => {
+						if(err){
+							return;
+						}
+
+						cb(null, {
+							type: 'article',
+							id: crypto.createHash('md5').update(url).digest('hex'),
+							title: url,
+							message_text: overview,
+							parse_mode: 'Markdown',
+							url: config.url + url
+						});
+					}, 0, true);
+				}, (err, result) => {
+					api.answerInlineQuery({
+						inline_query_id: query.id,
+						//results: result.filter(v => v !== undefined)
+						results: [{
+							type: 'article',
+							id: 'TEST1234',
+							title: 'test',
+							message_text: 'aaaa'
+						}]
+					});
+
+					inlineSession[k].done = true;
+					asyncCallback();
+				}); */
+			}
+		});
+	});
+
+}, config.queryInterval);
+
 function log(logContents, chatId){
 	api.sendMessage({
 		chat_id: chatId,
@@ -147,14 +254,44 @@ function log(logContents, chatId){
 	});
 }
 
-function getNamuwiki(chatId, url, callback, redirectionCount){
-	if(redirectionCount === undefined) redirectionCount = 0;
+function attempt(from){
+	if(namuwikiReqIds[from] !== undefined){
+		if(namuwikiReqIds[from].date < Date.now()){
+			namuwikiReqIds[from].count = 0;
+			namuwikiReqIds[from].date = Date.now() + 60000;
+		}
+
+		if(namuwikiReqIds[from].count >= config.commandAmount){
+			return true;
+		}
+
+		namuwikiReqIds[from].count++;
+	}else{
+		namuwikiReqIds[from] = {
+			count: 0,
+			date: Date.now() + 60000
+		};
+	}
+
+	return false;
+}
+
+function getNamuwiki(url, callback, redirectionCount, waited){
+	if(!waited && lastRequest + config.requestInterval > Date.now()){
+		setTimeout(() => {
+			getNamuwiki(url, callback, redirectionCount, true);
+		}, config.requestInterval);
+		return;
+	}
+
+	lastRequest = Date.now();
+
 	if(redirectionCount > config.maxRedirection){
 		callback(new Error("Too many redirections!"));
 	}
 
 	request({
-		'method': 'get',
+		method: 'get',
 		headers: {
 			'User-Agent': config.userAgent
 		},
@@ -165,7 +302,7 @@ function getNamuwiki(chatId, url, callback, redirectionCount){
 
 			if(body.includes('#redirect ')){
 				var redirectionTarget = body.match(/^#redirect .*$/m)[0].replace('#redirect ', '');
-				getNamuwiki(chatId, redirectionTarget, callback, redirectionCount + 1);
+				getNamuwiki(redirectionTarget, callback, redirectionCount + 1, true);
 				return;
 			}
 
@@ -187,6 +324,11 @@ function getNamuwiki(chatId, url, callback, redirectionCount){
 				callback(undefined, url, overview);
 			});
 		}else{
+			if(err){
+				console.error(chalk.bgRed(err.toString()));
+				callback(500);
+				return;
+			}
 			console.log(chalk.yellow(response.statusCode + ': ' + url));
 			callback(response.statusCode);
 			return;

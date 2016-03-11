@@ -22,7 +22,7 @@ class AttachmentRemover extends Remover{
 			case 'replace':
 				text = text.replace(this.regex, '[이미지](https://attach.namu.wiki/$1)');
 				break;
-				
+
 			case 'tag':
 				text = text.replace(this.regex, '$1');
 				break;
@@ -140,8 +140,8 @@ class ImageRemover extends Remover{
 
 	remove(type, text, cb){
 		 switch(type){
-			 case whole: text = text.replace(regex, ''); break;
-			 case replace: text = text.replace(regex, '[이미지]($1)'); break;
+			 case 'whole': text = text.replace(this.regex, ''); break;
+			 case 'replace': text = text.replace(this.regex, '[이미지]($1)'); break;
 		 }
 
 		 cb(text);

@@ -8,7 +8,13 @@ module.exports = {
 	userAgent: "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36",
 	url: "https://namu.wiki/w/",
 	rawUrl: "https://namu.wiki/raw/",
+	searchUrl: "https://namu.wiki/search/",
+	inlineAmount: 5,
+	commandAmount: 10,
 	maxRedirection: 5,
+	querySpeed: 2000,
+	queryInterval: 100,
+	requestInterval: 100,
 	useMarkdown: true,
 	remove: {
 		bold: 'tag',
