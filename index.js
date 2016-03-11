@@ -1,6 +1,5 @@
 var async = require('async');
 var cheerio = require('cheerio');
-//var crypto = require('crypto');
 var chalk = require('chalk');
 var request = require('request');
 var util = require('util');
@@ -38,7 +37,7 @@ api.on('message', function(message){
 		if(url === ''){
 			api.sendMessage({
 				chat_id: chatId,
-				text: '사용법: /nw [검색할 무언가]\n개발자: @Khinenw\n사용한 이미지: 무냐 by eb\n세피로트 by SMINORFF_KAMCHATKA\n사용된 이미지는 모두 CC-BY-NC-SA 2.0 조건 하에 배포되고 있습니다.',
+				text: '사용법: /nw [검색할 무언가]\n혹은 @namuwikiBot [검색할 무언가] 입력 후 기다리기\n\n개발자: @Khinenw\n사용한 이미지: 무냐 by eb\n세피로트 by SMINORFF_KAMCHATKA\n사용된 이미지는 모두 CC-BY-NC-SA 2.0 조건 하에 배포되고 있습니다.'
 			});
 			return;
 		}
@@ -172,7 +171,6 @@ setInterval(() => {
 
 							results.push({
 								type: 'article',
-								//id: crypto.createHash('md5').update(url).digest('hex'),
 								id: (++inlineId) + '',
 								title: url,
 								message_text: '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + encodeURIComponent(url) + ')',
@@ -194,45 +192,6 @@ setInterval(() => {
 						asyncCallback();
 					});
 				});
-
-				/*async.mapSeries($('article.wiki-article>ul>li>a').get(), function(el, cb){
-				 	//Not lazy T_T
-					i++;
-					if(i > config.inlineAmount){
-						//cb(true);
-						cb(null, undefined);
-						return;
-					}
-
-					getNamuwiki(decodeURIComponent($(el).attr('href').replace('/w/', '')), (err, url, overview) => {
-						if(err){
-							return;
-						}
-
-						cb(null, {
-							type: 'article',
-							id: crypto.createHash('md5').update(url).digest('hex'),
-							title: url,
-							message_text: overview,
-							parse_mode: 'Markdown',
-							url: config.url + url
-						});
-					}, 0, true);
-				}, (err, result) => {
-					api.answerInlineQuery({
-						inline_query_id: query.id,
-						//results: result.filter(v => v !== undefined)
-						results: [{
-							type: 'article',
-							id: 'TEST1234',
-							title: 'test',
-							message_text: 'aaaa'
-						}]
-					});
-
-					inlineSession[k].done = true;
-					asyncCallback();
-				}); */
 			}
 		});
 	});

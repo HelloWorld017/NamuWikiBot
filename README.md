@@ -12,4 +12,4 @@ https://telegram.me/namuwikiBot 을 눌러 채팅방에 추가한다.
 
 1. 무냐 by eb
 
-2. 세피로트 by SMINORFF_KAMCHATK
+2. 세피로트 by SMINORFF_KAMCHATKA
