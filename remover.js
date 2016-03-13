@@ -106,7 +106,7 @@ class HyperlinkRemover extends Remover{
 						return p1;
 					}
 
-					if(!/^(http|https):\/\/[^]+/.match(text){
+					if(!/^(http|https):\/\/[^]+/.match(text)){
 						return p2 + "(" + p1 + ")";
 					}
 
