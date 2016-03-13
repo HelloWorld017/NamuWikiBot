@@ -5,7 +5,8 @@ var request = require('request');
 var util = require('util');
 var telegram = require('telegram-bot-api');
 
-var remover = require('./remover.js');
+var fixedURIencode = require('./encoder');
+var remover = require('./remover');
 var config = require('./config/');
 
 var api = new telegram({
@@ -64,9 +65,9 @@ api.on('message', function(message){
 
 			var text = "";
 			if(config.useMarkdown){
-				text = '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + encodeURIComponent(url) + ')';
+				text = '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + fixedURIEncode(url) + ')';
 			}else{
-				text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
+				text = url + '\n' + overview + '\n' + config.url + fixedURIEncode(url);
 			}
 
 			if(config.split && text.length > 4000){
@@ -108,7 +109,7 @@ api.on('message', function(message){
 			}, function(err, data){
 				if(err){
 					// 에러가 마크다운에 의해 발생했을 경우, 마크다운 없이 보내본다.
-					if(config.useMarkdown) text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
+					if(config.useMarkdown) text = url + '\n' + overview + '\n' + config.url + fixedURIEncode(url);
 					api.sendMessage({
 						chat_id: chatId,
 						text: text
@@ -155,7 +156,7 @@ setInterval(() => {
 			headers: {
 				'User-Agent': config.userAgent
 			},
-			url: config.searchUrl + encodeURIComponent(query.query)
+			url: config.searchUrl + fixedURIEncode(query.query)
 		}, (err, response, body) => {
 			if(!err && response.statusCode === 200){
 				var $ = cheerio.load(body);
@@ -173,9 +174,9 @@ setInterval(() => {
 								type: 'article',
 								id: (++inlineId) + '',
 								title: url,
-								message_text: '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + encodeURIComponent(url) + ')',
+								message_text: '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + fixedURIEncode(url) + ')',
 								parse_mode: 'Markdown',
-								url: config.url + encodeURIComponent(url)
+								url: config.url + fixedURIEncode(url)
 							});
 							cb();
 						}, 0, true);
@@ -254,7 +255,7 @@ function getNamuwiki(url, callback, redirectionCount, waited){
 		headers: {
 			'User-Agent': config.userAgent
 		},
-		url: config.rawUrl + encodeURIComponent(url)
+		url: config.rawUrl + fixedURIEncode(url)
 	}, function(err, response, body){
 		if(!err && response.statusCode === 200){
 			console.log(chalk.cyan(response.statusCode + ': ' + url));
