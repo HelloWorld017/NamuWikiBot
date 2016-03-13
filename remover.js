@@ -107,8 +107,8 @@ class HyperlinkRemover extends Remover{
 						return p1;
 					}
 
-					if(!/^(http|https):\/\/[^]+/.match(text)){
-						return p2 + "(" + p1 + ")";
+					if(!/^(http|https):\/\/[^]+/.test(p1)){
+						return p2 + "(" + ((paragraph === 'noparagraph') ? p1.replace(/#s-\d(\.\d)*/, '') : p1) + ")";
 					}
 
 					return '[' + p2 + ']' + '(' + fixedURIencode(p1) + ')';
