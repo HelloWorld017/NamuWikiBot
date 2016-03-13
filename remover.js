@@ -94,7 +94,6 @@ class HyperlinkRemover extends Remover{
 
 		if(paragraph === 'noparagraph') text = text.replace(/\[\[#s-\d(\.\d)*(?:\|.*)?\]\]/g, '');
 
-		if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
 		switch(type){
 			case 'whole':
 				cb(text.replace(/\[\[[^\[\]]*\]\]/g, ''));
@@ -102,6 +101,8 @@ class HyperlinkRemover extends Remover{
 
 			case 'replace':
 				text = text.replace(this.regex, function(match, p1, p2){
+					if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
+
 					if(!p2){
 						return p1;
 					}
@@ -115,6 +116,7 @@ class HyperlinkRemover extends Remover{
 
 			case 'former':
 				text = text.replace(this.regex, function(match, p1){
+					if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
 					return p1;
 				});
 				break;
@@ -122,6 +124,7 @@ class HyperlinkRemover extends Remover{
 			case 'latter':
 				text = text.replace(this.regex, function(match, p1, p2){
 					if(!p2){
+						if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
 						return p1;
 					}
 					return p2;
