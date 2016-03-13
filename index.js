@@ -65,9 +65,9 @@ api.on('message', function(message){
 
 			var text = "";
 			if(config.useMarkdown){
-				text = '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + fixedURIEncode(url) + ')';
+				text = '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + fixedURIencode(url) + ')';
 			}else{
-				text = url + '\n' + overview + '\n' + config.url + fixedURIEncode(url);
+				text = url + '\n' + overview + '\n' + config.url + fixedURIencode(url);
 			}
 
 			if(config.split && text.length > 4000){
@@ -109,7 +109,7 @@ api.on('message', function(message){
 			}, function(err, data){
 				if(err){
 					// 에러가 마크다운에 의해 발생했을 경우, 마크다운 없이 보내본다.
-					if(config.useMarkdown) text = url + '\n' + overview + '\n' + config.url + fixedURIEncode(url);
+					if(config.useMarkdown) text = url + '\n' + overview + '\n' + config.url + fixedURIencode(url);
 					api.sendMessage({
 						chat_id: chatId,
 						text: text
@@ -156,7 +156,7 @@ setInterval(() => {
 			headers: {
 				'User-Agent': config.userAgent
 			},
-			url: config.searchUrl + fixedURIEncode(query.query)
+			url: config.searchUrl + fixedURIencode(query.query)
 		}, (err, response, body) => {
 			if(!err && response.statusCode === 200){
 				var $ = cheerio.load(body);
@@ -174,9 +174,9 @@ setInterval(() => {
 								type: 'article',
 								id: (++inlineId) + '',
 								title: url,
-								message_text: '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + fixedURIEncode(url) + ')',
+								message_text: '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + fixedURIencode(url) + ')',
 								parse_mode: 'Markdown',
-								url: config.url + fixedURIEncode(url)
+								url: config.url + fixedURIencode(url)
 							});
 							cb();
 						}, 0, true);
@@ -255,7 +255,7 @@ function getNamuwiki(url, callback, redirectionCount, waited){
 		headers: {
 			'User-Agent': config.userAgent
 		},
-		url: config.rawUrl + fixedURIEncode(url)
+		url: config.rawUrl + fixedURIencode(url)
 	}, function(err, response, body){
 		if(!err && response.statusCode === 200){
 			console.log(chalk.cyan(response.statusCode + ': ' + url));
