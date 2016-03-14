@@ -5,7 +5,11 @@ var request = require('request');
 var util = require('util');
 var telegram = require('telegram-bot-api');
 
-var fixedURIencode = require('./encoder');
+var uriencoder = require('./encoder');
+var fixedURIencode = function(uri){
+	return uriencoder(encodeURIComponent(uri));
+};
+
 var remover = require('./remover');
 var config = require('./config/');
 

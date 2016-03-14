@@ -1,3 +1,3 @@
 module.exports = (uri) => {
-	return encodeURIComponent(uri).replace(/\(/g, '%28').replace(/\)/g, '%29');
+	return uri.replace(/\(/g, '%28').replace(/\)/g, '%29');
 };
