@@ -7,7 +7,9 @@ var index = require('./routes/index');
 var app = express();
 
 if((process.env.NODE_ENV || 'development') === 'development') app.use(logger('dev'));
-app.use(bodyParser.text());
+app.use(bodyParser.text({
+	type: 'application/json'
+}));
 
 app.use('/', index(global.config.token));
 app.use((req, res, next) => {

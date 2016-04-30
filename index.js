@@ -89,7 +89,7 @@ api.on('message', function(message){
 				return;
 			}
 
-			sendMarkdown(chatId, v);
+			sendMarkdown(chatId, text);
 		});
 	}
 });
@@ -347,5 +347,15 @@ httpServer.on('listening', () => {
 	console.log((typeof addr === 'string') ? 'Pipe ' + addr : 'Listening on port ' + addr.port);
 });
 
+if(!useCert){
+	var _baseurl = 'https://api.telegram.org/bot' + config.token + '/';
 
-api.setWebHook(config.hookUrl + config.token, (useCert) ? options.crt : undefined);
+	request({
+		method: 'POST',
+		json: true,
+		formData: {
+			url: config.hookUrl + config.token
+		},
+		url: _baseurl + 'setWebhook'
+	});
+}else api.setWebhook(config.hookUrl + config.token, options.crt);

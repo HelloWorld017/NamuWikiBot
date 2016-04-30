@@ -22,6 +22,7 @@ module.exports = (token) => {
 		}
 
 		if(item.message) global.api.emit('message', item.message);
+		res.end(':D');
 	});
 
 	return router;

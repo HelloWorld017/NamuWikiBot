@@ -1,6 +1,6 @@
 module.exports = {
 	token: undefined,
-	hookUrl: 'https://namu.khinenw.tk',
+	hookUrl: 'https://namu.khinenw.tk/',
 	failSticker: [
 		"./resources/notfound0.webp",
 		"./resources/notfound1.webp",
