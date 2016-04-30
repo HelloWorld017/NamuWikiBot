@@ -1,5 +1,6 @@
 "use strict";
 var async = require('async');
+var fixedURIencode = require('./encoder');
 
 class Remover{
 	constructor(){
@@ -20,7 +21,9 @@ class AttachmentRemover extends Remover{
 	remove(type, text, cb){
 		switch(type){
 			case 'replace':
-				text = text.replace(this.regex, '[이미지](https://attach.namu.wiki/$1)');
+				text = text.replace(this.regex, (match, p1) => {
+					return '[이미지](https://attach.namu.wiki/' + fixedURIencode(p1) + ')';
+				});
 				break;
 
 			case 'tag':
@@ -91,7 +94,6 @@ class HyperlinkRemover extends Remover{
 
 		if(paragraph === 'noparagraph') text = text.replace(/\[\[#s-\d(\.\d)*(?:\|.*)?\]\]/g, '');
 
-		if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
 		switch(type){
 			case 'whole':
 				cb(text.replace(/\[\[[^\[\]]*\]\]/g, ''));
@@ -99,19 +101,22 @@ class HyperlinkRemover extends Remover{
 
 			case 'replace':
 				text = text.replace(this.regex, function(match, p1, p2){
+					if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
+
 					if(!p2){
 						return p1;
 					}
 
-					if(!/^(http|https):\/\/[^]+/.match(text)){
-						return p2 + "(" + p1 + ")";
+					if(!/^(http|https):\/\/[^]+/.test(p1)){
+						return p2 + "(" + ((paragraph === 'noparagraph') ? p1.replace(/#s-\d(\.\d)*/, '') : p1) + ")";
 					}
 
-					return '[' + p2 + ']' + '(' + p1 + ')';
+					return '[' + p2 + ']' + '(' + fixedURIencode(p1) + ')';
 				});
 
 			case 'former':
 				text = text.replace(this.regex, function(match, p1){
+					if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
 					return p1;
 				});
 				break;
@@ -119,6 +124,7 @@ class HyperlinkRemover extends Remover{
 			case 'latter':
 				text = text.replace(this.regex, function(match, p1, p2){
 					if(!p2){
+						if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
 						return p1;
 					}
 					return p2;
@@ -144,7 +150,9 @@ class ImageRemover extends Remover{
 	remove(type, text, cb){
 		 switch(type){
 			 case 'whole': text = text.replace(this.regex, ''); break;
-			 case 'replace': text = text.replace(this.regex, '[이미지]($1)'); break;
+			 case 'replace': text = text.replace(this.regex, (match, p1) => {
+				 return '[이미지](' + fixedURIencode(p1) + ')';
+			 }); break;
 		 }
 
 		 cb(text);
@@ -212,7 +220,9 @@ class NamuImageRemover extends Remover{
 				break;
 
 			case 'replace':
-				text = text.replace(this.regex, '[이미지](https://namu.wiki/file/$1)');
+				text = text.replace(this.regex, (match, p1) => {
+					return '[이미지](https://namu.wiki/file/' + fixedURIencode(p1) + ')';
+				});
 				break;
 		}
 

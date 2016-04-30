@@ -7,7 +7,12 @@ var request = require('request');
 var util = require('util');
 var telegram = require('telegram-bot-api');
 
-var remover = require('./remover.js');
+var uriencoder = require('./encoder');
+var fixedURIencode = function(uri){
+	return uriencoder(encodeURIComponent(uri));
+};
+
+var remover = require('./remover');
 var config = require('./config/');
 
 var api = new telegram({
@@ -71,9 +76,9 @@ api.on('message', function(message){
 
 			var text = "";
 			if(config.useMarkdown){
-				text = '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + encodeURIComponent(url) + ')';
+				text = '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + fixedURIencode(url) + ')';
 			}else{
-				text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
+				text = url + '\n' + overview + '\n' + config.url + fixedURIencode(url);
 			}
 
 			if(config.split && text.length > 4000){
@@ -115,7 +120,7 @@ setInterval(() => {
 			headers: {
 				'User-Agent': config.userAgent
 			},
-			url: config.searchUrl + encodeURIComponent(query.query)
+			url: config.searchUrl + fixedURIencode(query.query)
 		}, (err, response, body) => {
 			if(!err && response.statusCode === 200){
 				var $ = cheerio.load(body);
@@ -133,9 +138,9 @@ setInterval(() => {
 								type: 'article',
 								id: (++inlineId) + '',
 								title: url,
-								message_text: '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + encodeURIComponent(url) + ')',
+								message_text: '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + fixedURIencode(url) + ')',
 								//parse_mode: 'Markdown',
-								url: config.url + encodeURIComponent(url)
+								url: config.url + fixedURIencode(url)
 							});
 							cb();
 						}, 0, true);
@@ -244,7 +249,7 @@ function getNamuwiki(url, callback, redirectionCount, waited){
 		headers: {
 			'User-Agent': config.userAgent
 		},
-		url: config.rawUrl + encodeURIComponent(url)
+		url: config.rawUrl + fixedURIencode(url)
 	}, function(err, response, body){
 		if(!err && response.statusCode === 200){
 			console.log(chalk.cyan(response.statusCode + ': ' + url));
