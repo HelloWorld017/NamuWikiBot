@@ -1,6 +1,8 @@
 var async = require('async');
 var cheerio = require('cheerio');
 var chalk = require('chalk');
+var http = require('http');
+var process = require('process');
 var request = require('request');
 var util = require('util');
 var telegram = require('telegram-bot-api');
@@ -11,9 +13,13 @@ var config = require('./config/');
 var api = new telegram({
 	token: config.token,
 	updates: {
-		enabled: true
+		enabled: false
 	}
 });
+
+global.api = api;
+global.config = config;
+var app = require('./app');
 
 var namuwikiReqIds = [];
 var inlineSession = {};
@@ -57,6 +63,7 @@ api.on('message', function(message){
 						chat_id: chatId,
 						text: "현재 Cloudflare DDoS 프로텍션 때문에 문서에 접근이 불가합니다."
 					});
+					//TODO add bypassing sucuri ddos protection
 					return;
 				}
 				return;
@@ -71,60 +78,13 @@ api.on('message', function(message){
 
 			if(config.split && text.length > 4000){
 				async.eachSeries(text.match(/[^]{1,4000}/g), function(v, cb){
-					api.sendMessage({
-						chat_id: chatId,
-						text: v,
-						parse_mode: 'Markdown'
-					}, function(err, data){
-						if(err){
-							api.sendMessage({
-								chat_id: chatId,
-								text: v
-							}, (err, data) => {
-								if(err){
-									log({
-										'Time': (new Date()).toUTCString(),
-										'Error 1': util.inspect(err),
-										'URL': url
-									}, chatId);
-								}
-
-								cb();
-							});
-							return;
-						}
-
-						cb();
-					});
+					sendMarkdown(chatId, v, cb);
 				});
 
 				return;
 			}
 
-			api.sendMessage({
-				chat_id: chatId,
-				text: text,
-				parse_mode: 'Markdown'
-			}, function(err, data){
-				if(err){
-					// 에러가 마크다운에 의해 발생했을 경우, 마크다운 없이 보내본다.
-					if(config.useMarkdown) text = url + '\n' + overview + '\n' + config.url + encodeURIComponent(url);
-					api.sendMessage({
-						chat_id: chatId,
-						text: text
-					}, function(err2, data2){
-						if(err2){
-							// 마크다운 오류도 아니므로 오류 메시지와 함께 처리
-							log({
-								'Time': (new Date()).toUTCString(),
-								'Error 1': util.inspect(err),
-								'Error 2': util.inspect(err2),
-								'URL': url
-							}, chatId);
-						}
-					});
-				}
-			});
+			sendMarkdown(chatId, v);
 		});
 	}
 });
@@ -174,7 +134,7 @@ setInterval(() => {
 								id: (++inlineId) + '',
 								title: url,
 								message_text: '**' + url + '**\n' + overview + '\n[자세히보기](' + config.url + encodeURIComponent(url) + ')',
-								parse_mode: 'Markdown',
+								//parse_mode: 'Markdown',
 								url: config.url + encodeURIComponent(url)
 							});
 							cb();
@@ -233,6 +193,36 @@ function attempt(from){
 	}
 
 	return false;
+}
+
+function sendMarkdown(chatId, v, cb){
+	cb = cb || () => {};
+
+	api.sendMessage({
+		chat_id: chatId,
+		text: v,
+		parse_mode: 'Markdown'
+	}, function(err, data){
+		if(err){
+			api.sendMessage({
+				chat_id: chatId,
+				text: v
+			}, (err, data) => {
+				if(err){
+					log({
+						'Time': (new Date()).toUTCString(),
+						'Error 1': util.inspect(err),
+						'URL': url
+					}, chatId);
+				}
+
+				cb();
+			});
+			return;
+		}
+
+		cb();
+	});
 }
 
 function getNamuwiki(url, callback, redirectionCount, waited){
@@ -296,3 +286,61 @@ function getNamuwiki(url, callback, redirectionCount, waited){
 		}
 	});
 }
+
+var port = ((val) => {
+	var portNumber = parseInt(val, 10);
+
+	if(isNaN(portNumber)){
+		return val;
+	}
+
+	if(portNumber >= 0){
+		return portNumber;
+	}
+
+	return false;
+})(process.env.PORT || '443');
+
+var useCert = (process.env.CERT === 'true');
+
+app.set('port', port);
+
+var options;
+
+if(useCert){
+	options = {
+		key: fs.readFileSync('/cert/key.pem'),
+		crt: fs.readFileSync('/cert/crt.pem')
+	};
+}
+
+if(useCert) var httpServer = http.createServer(options, app);
+else var httpServer = http.createServer(app);
+
+httpServer.listen(port);
+httpServer.on('error', (err) => {
+	if(err.syscall !== 'listen') throw err;
+	var bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
+
+	switch(err.code){
+		case 'EACCES':
+			console.error('Permission Denied!');
+			process.exit(1);
+			return;
+
+		case 'EADDRINUSE':
+			console.error('Address in use!');
+			process.exit(1);
+			return;
+	}
+
+	throw error;
+});
+
+httpServer.on('listening', () => {
+	var addr = httpServer.address();
+	console.log((typeof addr === 'string') ? 'Pipe ' + addr : 'Listening on port ' + addr.port);
+});
+
+
+api.setWebHook(config.hookUrl + config.token, (useCert) ? options.crt : undefined);
