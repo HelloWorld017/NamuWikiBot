@@ -255,14 +255,14 @@ function getNamuwiki(url, callback, redirectionCount, waited){
 			console.log(chalk.cyan(response.statusCode + ': ' + url));
 
 			if(body.includes('#redirect ')){
-				var redirectionTarget = body.match(/^#redirect .*$/m);
-				if(redirectionTarget && redirectionTarget[0]){
-					getNamuwiki(redirectionTarget[0].replace('#redirect ', ''), callback, redirectionCount + 1, true);
+				var redirectionTarget = body.match(/^\s*#redirect\s+(.*)\s*$/m);
+				if(redirectionTarget && redirectionTarget[1]){
+					getNamuwiki(redirectionTarget[1], callback, redirectionCount + 1, true);
 					return;
 				}
 			}
 
-			var split = body.split(/^[=]+ .* [=]+$/gm);
+			var split = body.split(/^\s*[=]+ .* [=]+\s*$/gm);
 			var overview = "";
 
 			if(split.length <= 1){
