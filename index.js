@@ -280,8 +280,7 @@ function sendMarkdown(chatId, v, cb){
 					log({
 						'Time': (new Date()).toUTCString(),
 						'Error 1': util.inspect(err)/*,
-						'URL': url*/
-					}, chatId);
+						'URL': url*/					}, chatId);
 				}
 
 				cb();
@@ -290,7 +289,7 @@ function sendMarkdown(chatId, v, cb){
 		}
 
 		cb();
-	}).catch(() => {});
+	});
 }
 
 function getNamuwiki(url, callback, redirectionCount, waited){
