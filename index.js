@@ -216,8 +216,8 @@ function sendMarkdown(chatId, v, cb){
 				if(err){
 					log({
 						'Time': (new Date()).toUTCString(),
-						'Error 1': util.inspect(err),
-						'URL': url
+						'Error 1': util.inspect(err)/*,
+						'URL': url*/
 					}, chatId);
 				}
 
