@@ -140,13 +140,13 @@ api.on('inline.callback.query', (query) => {
 
 	if(queryData === undefined){
 		api.sendMessage({
-			chat_id: query.from,
+			chat_id: query.from.id,
 			text: '쿼리가 만료되었습니다! /nw@namuwikiBot 명령어를 다시 입력해주세요!'
 		}).catch(() => {});
 		return;
 	}
 
-	handleMessage(query.from, queryData.to, {
+	handleMessage(query.from.id, queryData.to, {
 		text: queryData.url
 	});
 });
