@@ -136,11 +136,11 @@ api.on('message', function(message){
 });
 
 api.on('inline.callback.query', (query) => {
-	var queryData = inlineResults[queryData]
+	var queryData = inlineResults[query.data];
 
 	if(queryData === undefined){
 		api.sendMessage({
-			chat_id: from,
+			chat_id: query.from,
 			text: '쿼리가 만료되었습니다! /nw@namuwikiBot 명령어를 다시 입력해주세요!'
 		}).catch(() => {});
 		return;
