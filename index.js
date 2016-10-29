@@ -29,7 +29,7 @@ var app = require('./app');
 
 var namuwikiReqIds = [];
 var inlineSession = {};
-var inlineResults = {};
+var inlineResults = [];
 var lastRequest = 0;
 var inlineId = 0;
 var searchSelector = 'article.wiki-article section a:not(.page-link)';
@@ -51,6 +51,7 @@ var handleMessage = function(from, chatId, message){
 			return;
 		}
 
+		var _url = url;
 		getNamuwiki(url, function(err, url, overview){
 			if(err){
 				if(err === 404){
@@ -59,7 +60,7 @@ var handleMessage = function(from, chatId, message){
 						headers: {
 							'User-Agent': config.userAgent
 						},
-						url: config.searchUrl + fixedURIencode(url)
+						url: config.searchUrl + fixedURIencode(_url)
 					}, (err, response, body) => {
 						if(!err && response.statusCode === 200){
 							var $ = cheerio.load(body);
@@ -69,9 +70,9 @@ var handleMessage = function(from, chatId, message){
 							Array.apply(null, Array(config.inlineAmount)).map((v, k) => {return k;}).forEach((i) => {
 								if(hrefs.length > i){
 									var url = decodeURIComponent($(hrefs.get(i)).attr('href').replace('/w/', ''));
-									var hash = crypto.createHash('md5').update(url).digest('hex');
+									var hash = crypto.createHash('md5').update(chatId + ':' + url).digest('hex');
 									inlineResults[hash] = {
-										url: '/nw' + url,
+										url: '/nw ' + url,
 										to: chatId,
 										expires: Date.now() + 120 * 1000
 									};
