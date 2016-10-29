@@ -136,6 +136,9 @@ api.on('message', function(message){
 });
 
 api.on('inline.callback.query', (query) => {
+	api.answerCallbackQuery({
+		callback_query_id: query.id
+	});
 	var queryData = inlineResults[query.data];
 
 	if(queryData === undefined){
