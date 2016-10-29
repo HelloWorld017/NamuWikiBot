@@ -1,6 +1,7 @@
 var async = require('async');
 var cheerio = require('cheerio');
 var chalk = require('chalk');
+var crypto = require('crypto');
 var http = require('http');
 var process = require('process');
 var request = require('request');
@@ -28,20 +29,17 @@ var app = require('./app');
 
 var namuwikiReqIds = [];
 var inlineSession = {};
+var inlineResults = {};
 var lastRequest = 0;
 var inlineId = 0;
-
-api.on('message', function(message){
-	var chatId = message.chat.id;
-	var from = message.from.id;
-	if(typeof message.text !== 'string') return;
-
+var searchSelector = 'article.wiki-article section a:not(.page-link)';
+var handleMessage = function(from, chatId, message){
 	if(message.text.startsWith('/nw')){
 		if(attempt(from, chatId)){
 			api.sendMessage({
 				chat_id: chatId,
 				text: "조금 있다가 해보세요!\n(현재 60초에 명령어 " + config.commandAmount + "개로 제한하고 있습니다.)\n나무위키 본관측에 많은 트래픽이 가는 것을 방지하기 위한 조치이니 협조해주시면 감사하겠습니다!"
-			});
+			}).catch(() => {});
 		}
 
 		var url = message.text.replace(/^\/nw(?:@[a-zA-Z0-9]*)?[ ]*/, '');
@@ -49,16 +47,50 @@ api.on('message', function(message){
 			api.sendMessage({
 				chat_id: chatId,
 				text: '사용법: /nw [검색할 무언가]\n혹은 @namuwikiBot [검색할 무언가] 입력 후 기다리기\n\n개발자: @Khinenw\n사용한 이미지: 무냐 by eb\n세피로트 by SMINORFF_KAMCHATKA\n사용된 이미지는 모두 CC-BY-NC-SA 2.0 조건 하에 배포되고 있습니다.'
-			});
+			}).catch(() => {});
 			return;
 		}
 
 		getNamuwiki(url, function(err, url, overview){
 			if(err){
 				if(err === 404){
-					api.sendSticker({
-						chat_id: chatId,
-						sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)]
+					request({
+						method: 'get',
+						headers: {
+							'User-Agent': config.userAgent
+						},
+						url: config.searchUrl + fixedURIencode(url)
+					}, (err, response, body) => {
+						if(!err && response.statusCode === 200){
+							var $ = cheerio.load(body);
+							var hrefs = $(searchSelector);
+							var results = [];
+
+							Array.apply(null, Array(config.inlineAmount)).map((v, k) => {return k;}).forEach((i) => {
+								if(hrefs.length > i){
+									var url = decodeURIComponent($(hrefs.get(i)).attr('href').replace('/w/', ''));
+									var hash = crypto.createHash('md5').update(url).digest('hex');
+									inlineResults[hash] = {
+										url: '/nw' + url,
+										to: chatId,
+										expires: Date.now() + 120 * 1000
+									};
+
+									results.push([{
+										text: url,
+										callback_data: hash
+									}]);
+								}
+							});
+
+							api.sendSticker({
+								chat_id: chatId,
+								sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)],
+								reply_markup: JSON.stringify({
+									inline_keyboard: results
+								})
+							}).catch(() => {});
+						}
 					});
 					return;
 				}
@@ -67,7 +99,7 @@ api.on('message', function(message){
 					api.sendMessage({
 						chat_id: chatId,
 						text: "현재 Cloudflare DDoS 프로텍션 때문에 문서에 접근이 불가합니다."
-					});
+					}).catch(() => {});
 					//TODO add bypassing sucuri ddos protection
 					return;
 				}
@@ -92,6 +124,28 @@ api.on('message', function(message){
 			sendMarkdown(chatId, text);
 		});
 	}
+};
+
+api.on('message', function(message){
+	var chatId = message.chat.id;
+	var from = message.from.id;
+	if(typeof message.text !== 'string') return;
+
+	handleMessage(from, chatId, message);
+});
+
+api.on('inline.callback.query', (query) => {
+	var queryData = inlineResults[queryData]
+
+	if(queryData === undefined){
+		api.sendMessage({
+			chat_id: from,
+			text: '쿼리가 만료되었습니다! /nw@namuwikiBot 명령어를 다시 입력해주세요!'
+		}).catch(() => {});
+		return;
+	}
+
+	handleMessage(query.from, queryData.to, queryData.url);
 });
 
 api.on('inline.query', (query) => {
@@ -124,7 +178,7 @@ setInterval(() => {
 		}, (err, response, body) => {
 			if(!err && response.statusCode === 200){
 				var $ = cheerio.load(body);
-				var hrefs = $('article.wiki-article>ul>li>a');
+				var hrefs = $(searchSelector);
 				var results = [];
 
 				async.eachSeries(Array.apply(null, Array(config.inlineAmount)).map((v, k) => {return k;}), (i, cb) => {
@@ -163,11 +217,20 @@ setInterval(() => {
 
 }, config.queryInterval);
 
+setInterval(() => {
+	Object.keys(inlineResults).forEach((k) => {
+		if(inlineResults[k].expires < Date.now()){
+			inlineResults[k] = undefined;
+			delete inlineResults[k];
+		}
+	});
+}, 60000);
+
 function log(logContents, chatId){
 	api.sendMessage({
 		chat_id: chatId,
 		text: "요청을 처리하는 도중 서버측에서 오류가 발생했습니다! :(\n@Khinenw 에게 제보하여주시면 감사하겠습니다!"
-	});
+	}).catch(() => {});
 
 	console.log(chalk.bgRed("=======Starting error report======="));
 	async.forEachOfSeries(logContents, function(v, k, cb){
@@ -227,7 +290,7 @@ function sendMarkdown(chatId, v, cb){
 		}
 
 		cb();
-	});
+	}).catch(() => {});
 }
 
 function getNamuwiki(url, callback, redirectionCount, waited){
