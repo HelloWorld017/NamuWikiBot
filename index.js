@@ -146,7 +146,9 @@ api.on('inline.callback.query', (query) => {
 		return;
 	}
 
-	handleMessage(query.from, queryData.to, queryData.url);
+	handleMessage(query.from, queryData.to, {
+		text: queryData.url
+	});
 });
 
 api.on('inline.query', (query) => {
@@ -281,7 +283,8 @@ function sendMarkdown(chatId, v, cb){
 					log({
 						'Time': (new Date()).toUTCString(),
 						'Error 1': util.inspect(err)/*,
-						'URL': url*/					}, chatId);
+						'URL': url*/
+					}, chatId);
 				}
 
 				cb();
