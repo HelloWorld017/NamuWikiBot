@@ -33,13 +33,59 @@ var inlineResults = [];
 var lastRequest = 0;
 var inlineId = 0;
 var searchSelector = 'article.wiki-article section a:not(.page-link)';
+var attempt_text = "조금 있다가 해보세요!\n(현재 60초에 명령어 " + config.commandAmount + "개로 제한하고 있습니다.)\n나무위키 본관측에 많은 트래픽이 가는 것을 방지하기 위한 조치이니 협조해주시면 감사하겠습니다!";
 var handleMessage = function(from, chatId, message){
+	if(message.text.startsWith('/nq')){
+		if(attempt(from, chatId)){
+			api.sendMessage({
+				chat_id: chatId,
+				text: attempt_text
+			}).catch(() => {});
+			return;
+		}
+
+		request({
+			method: 'get',
+			headers: {
+				'User-Agent': config.userAgent
+			},
+			url: config.searchUrl + fixedURIencode(message.text.replace(/^\/nq(?:@[a-zA-Z0-9]*)?[ ]*/, ''))
+		}, (err, resp, body) => {
+			var arr = [];
+			JSON.parse(body).forEach((url) => {
+				if(url){
+					var hash = crypto.createHash('md5').update(chatId + ':' + url).digest('hex');
+					inlineResults[hash] = {
+						url: '/nw ' + url,
+						to: chatId,
+						expires: Date.now() + 120 * 1000
+					};
+
+					arr.push([{
+						text: url,
+						callback_data: hash
+					}]);
+				}
+			});
+
+			api.sendMessage({
+				chat_id: chatId,
+				text: '검색하실 항목을 선택해주세요!',
+				reply_markup: JSON.stringify({
+					inline_keyboard: arr
+				})
+			}).catch((err) => {});
+		});
+		return;
+	}
+
 	if(message.text.startsWith('/nw')){
 		if(attempt(from, chatId)){
 			api.sendMessage({
 				chat_id: chatId,
-				text: "조금 있다가 해보세요!\n(현재 60초에 명령어 " + config.commandAmount + "개로 제한하고 있습니다.)\n나무위키 본관측에 많은 트래픽이 가는 것을 방지하기 위한 조치이니 협조해주시면 감사하겠습니다!"
+				text: attempt_text
 			}).catch(() => {});
+			return;
 		}
 
 		var url = message.text.replace(/^\/nw(?:@[a-zA-Z0-9]*)?[ ]*/, '');
