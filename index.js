@@ -49,7 +49,7 @@ var handleMessage = function(from, chatId, message){
 			headers: {
 				'User-Agent': config.userAgent
 			},
-			url: config.searchUrl + fixedURIencode(message.text.replace(/^\/nq(?:@[a-zA-Z0-9]*)?[ ]*/, ''))
+			url: config.completeUrl + fixedURIencode(message.text.replace(/^\/nq(?:@[a-zA-Z0-9]*)?[ ]*/, ''))
 		}, (err, resp, body) => {
 			var arr = [];
 			JSON.parse(body).forEach((url) => {

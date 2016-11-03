@@ -10,6 +10,7 @@ module.exports = {
 	url: "https://namu.wiki/w/",
 	rawUrl: "https://namu.wiki/raw/",
 	searchUrl: "https://namu.wiki/search/",
+	completeUrl: "https://namu.wiki/complete/",
 	inlineAmount: 5,
 	commandAmount: 10,
 	maxRedirection: 5,
