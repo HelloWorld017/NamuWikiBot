@@ -373,6 +373,11 @@ function getNamuwiki(url, callback, redirectionCount, waited){
 		},
 		url: config.rawUrl + fixedURIencode(url)
 	}, function(err, response, body){
+		if(!err && typeof body === 'string' && body.includes('<!DOCTYPE html>')){
+			err = new Error();
+			err.status = 404;
+		}
+
 		if(!err && response.statusCode === 200){
 			console.log(chalk.cyan(response.statusCode + ': ' + url));
 
