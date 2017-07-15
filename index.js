@@ -1,7 +1,9 @@
+'use strict';
 var async = require('async');
 var cheerio = require('cheerio');
 var chalk = require('chalk');
 var crypto = require('crypto');
+var EventEmitter = require('events');
 var http = require('http');
 var process = require('process');
 var request = require('request');
@@ -23,8 +25,12 @@ var api = new telegram({
 	}
 });
 
+class BotEmitter extends EventEmitter{}
+
+
 global.api = api;
 global.config = config;
+global.bevents = new BotEmitter();
 var app = require('./app');
 
 var namuwikiReqIds = [];
@@ -173,7 +179,7 @@ var handleMessage = function(from, chatId, message){
 	}
 };
 
-api.on('message', function(message){
+bevents.on('message', function(message){
 	var chatId = message.chat.id;
 	var from = message.from.id;
 	if(typeof message.text !== 'string') return;
@@ -181,7 +187,7 @@ api.on('message', function(message){
 	handleMessage(from, chatId, message);
 });
 
-api.on('inline.callback.query', (query) => {
+bevents.on('inline.callback.query', (query) => {
 	api.answerCallbackQuery({
 		callback_query_id: query.id
 	}).then(() => {
@@ -201,7 +207,7 @@ api.on('inline.callback.query', (query) => {
 	}).catch(() => {});
 });
 
-api.on('inline.query', (query) => {
+bevents.on('inline.query', (query) => {
 	if(inlineSession[query.from.id] === undefined){
 		inlineSession[query.from.id] = [];
 	}
