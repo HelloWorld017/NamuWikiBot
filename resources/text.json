@@ -1,0 +1,10 @@
+{
+	"attempt": "조금 있다가 해보세요!\n(현재 60초에 명령어 %d개로 제한하고 있습니다.)\n나무위키 본관측에 많은 트래픽이 가는 것을 방지하기 위한 조치이니 협조해주시면 감사하겠습니다!",
+	"search": "검색하실 항목을 선택해주세요!",
+	"usage": "사용법: /nw [검색할 무언가]\n혹은 @namuwikiBot [검색할 무언가] 입력 후 기다리기\n\n개발자: @Khinenw\n사용한 이미지: 무냐 by eb\n세피로트 by SMINORFF_KAMCHATKA\n사용된 이미지는 모두 CC-BY-NC-SA 2.0 조건 하에 배포되고 있습니다.",
+	"sucuri": "현재 Cloudflare DDoS 프로텍션 때문에 문서에 접근이 불가합니다.",
+	"query_invalid": "쿼리가 만료되었습니다! /nw@namuwikiBot 명령어를 다시 입력해주세요!",
+	"query_too_fast": "조금 있다가 다시 해주세요! T_T",
+	"query_error": "앗, 이런!",
+	"error": "요청을 처리하는 도중 서버측에서 오류가 발생했습니다! :(\n@Khinenw 에게 제보하여주시면 감사하겠습니다!"
+}

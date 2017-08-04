@@ -14,10 +14,9 @@ module.exports = {
 	inlineAmount: 5,
 	commandAmount: 10,
 	maxRedirection: 5,
-	querySpeed: 2000,
-	queryInterval: 100,
+	gcInterval: 60000,
 	requestInterval: 100,
-	useMarkdown: true,
+	overviewLength: 3072,
 	remove: {
 		bold: 'tag',
 		italic: 'tag',
@@ -40,9 +39,11 @@ module.exports = {
 
 		quote: 'replace', //replace changes it to grave accent. Because there is no quote in telegram.
 		line: 'replace',
+		youtube: 'replace',
 		table: 'tag',
 		include: 'whole',
-		footnote: 'whole'
-	},
-	split: true
+		footnote: 'whole',
+
+		finalizer: true
+	}
 };

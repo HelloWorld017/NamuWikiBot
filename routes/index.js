@@ -1,30 +1,39 @@
-module.exports = (token) => {
-	var router = require('express').Router();
+const EventEmitter = require('events');
+const {Router} = require('express');
 
-	router.post('/' + token, (req, res, next) => {
-		console.log('Youve got mail');
-		var item = JSON.parse(req.body);
+class NamuRouter extends EventEmitter {
+	constructor(token) {
+		this._router = Router();
 
-		global.bevents.emit('update', item);
+		this._router.post(`/${token}`, (req, res, next) => {
+			const item = JSON.parse(req.body);
 
-		if (item.callback_query){
-		    global.bevents.emit('inline.callback.query', item.callback_query);
-		    return;
-		}
+			this.emit('update', item);
 
-		if(item.inline_query){
-		    global.bevents.emit('inline.query', item.inline_query);
-		    return;
-		}
+			if(item.callback_query) {
+				this.emit('inline.callback.query', item.callback_query);
+				return;
+			}
 
-		if(item.chosen_inline_result){
-		    global.bevents.emit('inline.result', item.chosen_inline_result);
-		    return;
-		}
+			if(item.inline_query) {
+				this.emit('inline.query', item.inline_query);
+				return;
+			}
 
-		if(item.message) global.bevents.emit('message', item.message);
-		res.end(':D');
-	});
+			if(item.chosen_inline_result) {
+				this.emit('inline.result', item.chosen_inline_result);
+				return;
+			}
 
-	return router;
-};
+			if(item.message) this.emit('message', item.message);
+
+			res.end(':D');
+		});
+	}
+
+	get router() {
+		return this._router;
+	}
+}
+
+module.exports = NamuRouter;

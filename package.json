@@ -1,6 +1,6 @@
 {
   "name": "namuwikibot",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "A telegram bot which searches namu.wiki.",
   "main": "index.js",
   "scripts": {
@@ -15,8 +15,7 @@
     "express": "^4.13.4",
     "morgan": "^1.7.0",
     "object-merge": "^2.5.1",
-    "request": "^2.67.0",
-    "telegram-bot-api": "^1.0.0"
+    "request-promise": "^4.2.1"
   },
   "repository": {
     "type": "git",
