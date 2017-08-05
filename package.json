@@ -2,9 +2,9 @@
   "name": "namuwikibot",
   "version": "1.0.0",
   "description": "A telegram bot which searches namu.wiki.",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -13,6 +13,7 @@
     "chalk": "^1.1.1",
     "cheerio": "^0.20.0",
     "express": "^4.13.4",
+    "html-truncate": "^1.2.2",
     "morgan": "^1.7.0",
     "object-merge": "^2.5.1",
     "request-promise": "^4.2.1"

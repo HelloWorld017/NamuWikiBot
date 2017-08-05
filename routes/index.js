@@ -3,10 +3,12 @@ const {Router} = require('express');
 
 class NamuRouter extends EventEmitter {
 	constructor(token) {
-		this._router = Router();
+		super();
 
-		this._router.post(`/${token}`, (req, res, next) => {
+		this._router = Router();
+		this._router.post(`/${token}`, (req, res) => {
 			const item = JSON.parse(req.body);
+			res.status(200).send(':D');
 
 			this.emit('update', item);
 
@@ -26,8 +28,6 @@ class NamuRouter extends EventEmitter {
 			}
 
 			if(item.message) this.emit('message', item.message);
-
-			res.end(':D');
 		});
 	}
 

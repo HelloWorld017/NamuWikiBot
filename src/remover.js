@@ -4,12 +4,35 @@ const GT = `\u{E2E2}NW_BOT_RT_MARK\u{EE22}`;
 const AMP = `\u{E2E2}NW_BOT_AMP_MARK\u{EE22}`;
 const QUOT = `\u{E2E2}NW_BOT_QUOT_MARK\u{EE22}`;
 
-const escapeHTML = (text) => {
-	return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;');
+const replaceMap = (text, map) => {
+	Object.keys(map).forEach((k) => {
+		text = text.split(k).join(map[k]);
+	});
+
+	return text;
 };
 
-const escapeNW = (text) => return text.replace('&', AMP).replace('<', LT).replace('>', GT).replace('"', QUOT);
-const unescapeNW = (text) => return text.replace(AMP, '&').replace(LT, '<').replace(GT, '>').replace(QUOT, '"');
+const escapeHTML = (text) => replaceMap(text, {
+	'&': '&amp;',
+	'<': '&lt;',
+	'>': '&gt;',
+	'"': '&quot;'
+});
+
+const escapeNW = (text) => replaceMap(text, {
+	'&': AMP,
+	'<': LT,
+	'>': GT,
+	'"': QUOT
+});
+
+const unescapeNWMap = {};
+unescapeNWMap[AMP] = '&';
+unescapeNWMap[LT] = '<';
+unescapeNWMap[GT] = '>';
+unescapeNWMap[QUOT] = '"';
+
+const unescapeNW = (text) => replaceMap(text, unescapeNWMap);
 
 const fixedURIencode = require('./encoder');
 
@@ -91,55 +114,100 @@ class FootnoteRemover extends Remover{
 class HyperlinkRemover extends Remover{
 	constructor(){
 		super();
-		this.regex = /\[\[([^\[\]\|]*)(?:\|([^\[\]]*))?\]\]/g;
+		this.regex = /\[\[([^\[\]\|]*?)(?:\|([^\[\]]*?))?\]\]/g;
 	}
 
-	async remove(param, text){
+	async remove(param, text, ctx) {
+		const links = [];
 		const split = param.split("|");
 		const type = split[0];
 		const paragraph = split[1];
 
-		if(paragraph === 'noparagraph') text = text.replace(/\[\[#s-\d(\.\d)*(?:\|.*)?\]\]/g, '');
+		if(paragraph === 'noparagraph') {
+			const regex = /\[\[(#s-\d+(?:\.\d+)*)(?:\|(.*))?\]\]/g;
+			switch(type) {
+				case 'whole':
+					text = text.replace(regex, '');
+					break;
+
+				case 'replace':
+					text = text.replace(regex, (match, p1, p2) => {
+						if(!p2) p2 = '§';
+
+						return escapeNW(`<a href="https://namu.wiki/w/${fixedURIencode(ctx)}$1">${escapeHTML(p2)}</a>`);
+					});
+					break;
+
+				case 'latter':
+					text = text.replace(regex, '$2');
+					break;
+			}
+		}
 
 		switch(type){
 			case 'whole':
-				return text.replace(/\[\[[^\[\]]*\]\]/g, '');
+				text = text.replace(/\[\[[^\[\]]*\]\]/g, '');
+				break;
 
 			case 'replace':
-				return text.replace(this.regex, (match, p1, p2) => {
+				text = text.replace(this.regex, (match, p1, p2) => {
 					if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
 
+					const anchorSplit = p1.split('#');
+					const url = anchorSplit[0];
+					const anchor = escapeHTML(anchorSplit[1] ? `#${anchorSplit[1]}` : '');
+
+					const isExternal = /^(http|https):\/\/[^]+/.test(p1);
+
 					if(!p2){
-						return p1;
+						if(!isExternal) {
+							links.push(url);
+							return escapeNW(
+								`<a href="https://namu.wiki/w/${fixedURIencode(url)}${anchor}">` +
+									escapeHTML(url) +
+								`</a>`
+							);
+						}
+
+						return escapeNW(`<a href="${escapeHTML(url)}${anchor}">외부링크</a>`);
 					}
 
-					if(!/^(http|https):\/\/[^]+/.test(p1)){
-						return `${p2}(${(paragraph === 'noparagraph') ? p1.replace(/#s-\d(\.\d)*/, '') : p1)})`;
+					if(!isExternal) {
+						links.push(url);
+						return escapeNW(
+							`<a href="https://namu.wiki/w/${fixedURIencode(url)}${anchor}">` +
+								escapeHTML(`${p2}(${p1})`) +
+							`</a>`
+						);
 					}
 
-					return escapeNW(`<a href="${fixedURIencode(p1)}">${escapeHTML(p2)}</a>`);
+					return escapeNW(`<a href="${escapeHTML(p1)}">${escapeHTML(p2)}</a>`);
 				});
+				break;
 
 			case 'former':
-				return text.replace(this.regex, (match, p1) => {
+				text = text.replace(this.regex, (match, p1) => {
 					if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
 					return p1;
 				});
+				break;
 
 			case 'latter':
-				return text.replace(this.regex, (match, p1, p2) => {
+				text = text.replace(this.regex, (match, p1, p2) => {
 					if(!p2){
 						if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
 						return p1;
 					}
 					return p2;
 				});
+				break;
 
 			case 'tag':
-				return text.replace(/\[\[/g, '').replace(/\]\]/g, '');
+				text = text.replace(/\[\[/g, '').replace(/\]\]/g, '');
+				break;
 		}
 
-		return text;
+		return {text, links};
 	}
 }
 
@@ -219,7 +287,7 @@ class NamuImageRemover extends Remover{
 
 			case 'replace':
 				return text = text.replace(this.regex, (match, p1) => {
-					return escapeNW(`<a href="https://namu.wiki/file/${fixedURIencode(p1)}>이미지</a>`);
+					return escapeNW(`<a href="https://namu.wiki/file/${fixedURIencode(p1)}">이미지</a>`);
 				});
 		}
 
@@ -259,6 +327,40 @@ class SimpleTagRemover extends Remover{
 		switch(type){
 			case 'replace':
 				return text.replace(new RegExp("(" + this.tag + ")", 'ig'), this.polyfill);
+
+			case 'tag':
+				return text.replace(new RegExp(this.tag, 'g'), '');
+
+			case 'whole':
+				return text.replace(new RegExp(this.tag + ".*?" + this.tag, 'g'), '');
+		}
+
+		return text;
+	}
+}
+
+class SimpleTagHTMLRemover extends Remover {
+	constructor(tag, htmlTagName) {
+		super();
+		this.tag = tag;
+		this.html = htmlTagName;
+	}
+
+	async remove(type, text) {
+		switch(type) {
+			case 'replace':
+				/*
+					1. Template is escaped. ([lt]b[gt]$1[lt]/b[gt])
+					2. Replaced ([lt]b[gt]blah<>blah[lt]/b[gt])
+					3. HTML chars are escaped. ([lt]b[gt]blah&lt;&gt;blah[lt]/b[gt]) (by Finalizer)
+					4. NW chars are unescaped.(<b>blah&lt;&gt;blah</b>) (by Finalizer)
+				*/
+				return text.replace(
+					new RegExp(this.tag + '([^]*?)' + this.tag, 'ig'),
+					(match, p1) => {
+						return escapeNW(`<${this.html}>${escapeHTML(p1)}</${this.html}>`);
+					}
+				);
 
 			case 'tag':
 				return text.replace(new RegExp(this.tag, 'g'), '');
@@ -319,7 +421,7 @@ class YoutubeRemover extends Remover {
 	}
 }
 
-class Finalizer extends Remover() {
+class Finalizer extends Remover {
 	constructor() {
 		super();
 	}
@@ -333,14 +435,8 @@ class Finalizer extends Remover() {
 }
 
 module.exports = {
-	/*
-		1. Template is escaped. ([lt]b[gt]$1[lt]/b[gt])
-		2. Replaced ([lt]b[gt]blah<>blah[lt]/b[gt])
-		3. HTML chars are escaped. ([lt]b[gt]blah&lt;&gt;blah[lt]/b[gt])
-		4. NW chars are unescaped.(<b>blah&lt;&gt;blah</b>)
-	*/
-	bold: new SimpleTagRemover("'''([^]+?)'''", escapeNW("<b>$1</b>")),
-	italic: new SimpleTagRemover("''([^]+?)''", escapeNW("<b>$1</b>")),
+	bold: new SimpleTagHTMLRemover("'''", 'b'),
+	italic: new SimpleTagHTMLRemover("''", 'i'),
 	underline: new SimpleTagRemover("__"),
 	striken: new MultipleDefinitionRemover(new SimpleTagRemover("--", "~~"), new SimpleTagRemover("~~", "~~")),
 

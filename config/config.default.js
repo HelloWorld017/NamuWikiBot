@@ -11,7 +11,8 @@ module.exports = {
 	rawUrl: "https://namu.wiki/raw/",
 	searchUrl: "https://namu.wiki/search/",
 	completeUrl: "https://namu.wiki/complete/",
-	inlineAmount: 5,
+	inlineAmount: 1,
+	branchAmount: 8, //namugazi
 	commandAmount: 10,
 	maxRedirection: 5,
 	gcInterval: 60000,
