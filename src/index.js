@@ -449,9 +449,10 @@ const ignoredApiCall = async (...args) => {
 
 const isEmptyText = (text) => text.trim().length === 0;
 
+let queryQueue = 0;
 const getNamuwiki = async (url, redirectionCount = 0, waited = false) => {
 	if(!waited && lastRequest + config.requestInterval > Date.now()){
-		await (() => new Promise((resolve) => setTimeout(resolve, config.requestInterval)))();
+		await (() => new Promise((resolve) => setTimeout(resolve, config.requestInterval * queryQueue)))();
 		return getNamuwiki(url, redirectionCount, true);
 	}
 
@@ -465,6 +466,7 @@ const getNamuwiki = async (url, redirectionCount = 0, waited = false) => {
 
 	if(url.includes('#')) url = url.split('#')[0];
 
+	queryQueue++;
 	try {
 		resp = await rp({
 			method: 'get',
@@ -479,6 +481,7 @@ const getNamuwiki = async (url, redirectionCount = 0, waited = false) => {
 		err.status = resp ? resp.statusCode : 500;
 		chalk.red;
 	}
+	queryQueue--;
 
 	if(resp) body = resp.body;
 

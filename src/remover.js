@@ -134,7 +134,7 @@ class HyperlinkRemover extends Remover{
 					text = text.replace(regex, (match, p1, p2) => {
 						if(!p2) p2 = '§';
 
-						return escapeNW(`<a href="https://namu.wiki/w/${fixedURIencode(ctx)}$1">${escapeHTML(p2)}</a>`);
+						return escapeNW(`<a href="https://namu.wiki/w/${fixedURIencode(ctx)}$1">[內§]${escapeHTML(p2)}</a>`);
 					});
 					break;
 
@@ -164,24 +164,24 @@ class HyperlinkRemover extends Remover{
 							links.push(url);
 							return escapeNW(
 								`<a href="https://namu.wiki/w/${fixedURIencode(url)}${anchor}">` +
-									escapeHTML(url) +
+									'[內]' + escapeHTML(url) +
 								`</a>`
 							);
 						}
 
-						return escapeNW(`<a href="${escapeHTML(url)}${anchor}">외부링크</a>`);
+						return escapeNW(`<a href="${escapeHTML(url)}${anchor}">[外]외부링크</a>`);
 					}
 
 					if(!isExternal) {
 						links.push(url);
 						return escapeNW(
 							`<a href="https://namu.wiki/w/${fixedURIencode(url)}${anchor}">` +
-								escapeHTML(`${p2}(${p1})`) +
+								'[內]' + escapeHTML(`${p2}(${p1})`) +
 							`</a>`
 						);
 					}
 
-					return escapeNW(`<a href="${escapeHTML(p1)}">${escapeHTML(p2)}</a>`);
+					return escapeNW(`<a href="${escapeHTML(p1)}">[外]${escapeHTML(p2)}</a>`);
 				});
 				break;
 
