@@ -167,7 +167,9 @@ const handleWiki = async (from, chatId, message) => {
 	if(url === ''){
 		await ignoredApiCall('sendMessage', {
 			chat_id: chatId,
-			text: translation.usage
+			text: translation.usage.join('\n'),
+			disable_web_page_preview: "true",
+			parse_mode: "html"
 		});
 
 		return;
@@ -453,7 +455,7 @@ let queryQueue = 0;
 const getNamuwiki = async (url, redirectionCount = 0, waited = false) => {
 	if(!waited && lastRequest + config.requestInterval > Date.now()){
 		await (() => new Promise((resolve) => setTimeout(resolve, config.requestInterval * queryQueue)))();
-		return getNamuwiki(url, redirectionCount, true);
+		return await getNamuwiki(url, redirectionCount, true);
 	}
 
 	lastRequest = Date.now();

@@ -123,6 +123,12 @@ class HyperlinkRemover extends Remover{
 		const type = split[0];
 		const paragraph = split[1];
 
+		const addToLink = (link) => {
+			if(!links.includes(link)) {
+				links.push(link);
+			}
+		};
+
 		if(paragraph === 'noparagraph') {
 			const regex = /\[\[(#s-\d+(?:\.\d+)*)(?:\|(.*))?\]\]/g;
 			switch(type) {
@@ -134,7 +140,7 @@ class HyperlinkRemover extends Remover{
 					text = text.replace(regex, (match, p1, p2) => {
 						if(!p2) p2 = '§';
 
-						return escapeNW(`<a href="https://namu.wiki/w/${fixedURIencode(ctx)}$1">[內§]${escapeHTML(p2)}</a>`);
+						return escapeNW(`<a href="https://namu.wiki/w/${fixedURIencode(ctx)}$1">§ ${escapeHTML(p2)}</a>`);
 					});
 					break;
 
@@ -161,27 +167,27 @@ class HyperlinkRemover extends Remover{
 
 					if(!p2){
 						if(!isExternal) {
-							links.push(url);
+							addToLink(url);
 							return escapeNW(
 								`<a href="https://namu.wiki/w/${fixedURIencode(url)}${anchor}">` +
-									'[內]' + escapeHTML(url) +
+									escapeHTML(url) +
 								`</a>`
 							);
 						}
 
-						return escapeNW(`<a href="${escapeHTML(url)}${anchor}">[外]외부링크</a>`);
+						return escapeNW(`<a href="${escapeHTML(url)}${anchor}">外 외부링크</a>`);
 					}
 
 					if(!isExternal) {
-						links.push(url);
+						addToLink(url);
 						return escapeNW(
 							`<a href="https://namu.wiki/w/${fixedURIencode(url)}${anchor}">` +
-								'[內]' + escapeHTML(`${p2}(${p1})`) +
+								escapeHTML(`${p2}(${p1})`) +
 							`</a>`
 						);
 					}
 
-					return escapeNW(`<a href="${escapeHTML(p1)}">[外]${escapeHTML(p2)}</a>`);
+					return escapeNW(`<a href="${escapeHTML(p1)}">外 ${escapeHTML(p2)}</a>`);
 				});
 				break;
 
@@ -427,8 +433,10 @@ class Finalizer extends Remover {
 	}
 
 	async remove(type, text) {
-		if(type)
+		if(type) {
 			text = unescapeNW(escapeHTML(text));
+			text = text.replace(/\n+/g, '\n');
+		}
 
 		return text;
 	}

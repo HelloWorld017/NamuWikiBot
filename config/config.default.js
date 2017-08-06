@@ -17,7 +17,7 @@ module.exports = {
 	maxRedirection: 5,
 	gcInterval: 60000,
 	requestInterval: 100,
-	overviewLength: 3072,
+	overviewLength: 1024,
 	remove: {
 		bold: 'tag',
 		italic: 'tag',
