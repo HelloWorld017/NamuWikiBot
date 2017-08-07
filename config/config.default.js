@@ -38,11 +38,16 @@ module.exports = {
 
 		hyperlink: 'replace|noparagraph', //(replace, former, latter, tag, whole)|(paragraph, noparagraph)
 
-		quote: 'replace', //replace changes it to grave accent. Because there is no quote in telegram.
 		line: 'replace',
 		youtube: 'replace',
+		quote: 'replace', //replace changes it to grave accent. Because there is no quote in telegram.
 		table: 'tag',
 		include: 'whole',
+		toc: 'replace',
+		footnote_macro: 'replace',
+		age: 'replace',
+		date: 'replace',
+		pagecount: 'replace',
 		footnote: 'whole',
 
 		finalizer: true

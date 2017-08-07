@@ -45,6 +45,58 @@ class Remover{
 		throw new Error("Undefined method called!");
 	}
 }
+
+class MacroRemover extends Remover {
+	constructor(macroName) {
+		super();
+
+		this.regex = new RegExp("\\[" + macroName + "\\s*\\((.*?)\\)\\s*\\]", 'ig');
+	}
+
+	async remove(type, text, ctx) {
+		return text.replace(this.regex, (match, args) => {
+			return this.replace(type, match, args, ctx);
+		});
+	}
+
+	replace(type, match) {
+		return match;
+	}
+}
+
+class AgeRemover extends MacroRemover{
+	constructor() {
+		super('age');
+	}
+
+	replace(type, match, args) {
+		switch(type) {
+			case 'whole': return '';
+			case 'replace':
+				const regex = /^\s*(\d{4,})-(\d{1,2})-(\d{1,2})\s*$/;
+				if(!regex.test(args)) return;
+
+				const [, year, month, date] = args.match(regex);
+
+				let age;
+
+				const today = new Date();
+			 	const todayMonth = d.getMonth() + 1;
+				const todayDate = d.getDate();
+
+				age = d.getFullYear() - year;
+
+				if (todayMonth < month || (todayMonth === month && todayDate < date)) {
+					age--;
+				}
+
+				return age;
+		}
+
+		return match;
+	}
+}
+
 //attachment:주소 형식의 이미지 제거
 class AttachmentRemover extends Remover{
 	constructor(){
@@ -89,6 +141,25 @@ class BraceRemover extends Remover{
 		}
 
 		return text;
+	}
+}
+
+class DateRemover extends MacroRemover {
+	constructor() {
+		super('date');
+	}
+
+	replace(type, match) {
+		switch(type) {
+			case 'replace':
+				const date = new Date();
+				return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}` +
+					` ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+
+			case 'whole': return '';
+		}
+
+		return match;
 	}
 }
 
@@ -157,7 +228,7 @@ class HyperlinkRemover extends Remover{
 
 			case 'replace':
 				text = text.replace(this.regex, (match, p1, p2) => {
-					if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/file/');
+					if(p1.startsWith(':파일:')) p1 = p1.replace(':파일:', 'https://namu.wiki/w/파일:');
 
 					const anchorSplit = p1.split('#');
 					const url = anchorSplit[0];
@@ -236,28 +307,15 @@ class ImageRemover extends Remover{
 	}
 }
 
-class IncludeRemover extends Remover{
+class LineBreakRemover extends MacroRemover{
 	constructor(){
-		super();
+		super('br');
 	}
 
-	async remove(type, text){
-		if(type === "whole")
-			return text.replace(/include\[\(.*\)\]/ig, '').replace(/include\(.*\)/ig, '');
-
-		return text;
-	}
-}
-
-class LineBreakRemover extends Remover{
-	constructor(){
-		super();
-	}
-
-	async remove(type, text){
+	replace(type){
 		switch(type){
-			case "whole": return text.replace(/\[br\]/g, '');
-			case "replace": return text.replace(/\[br\]/g, '\n');
+			case "whole": return '';
+			case "replace": return '\n';
 		}
 
 		return text;
@@ -293,11 +351,29 @@ class NamuImageRemover extends Remover{
 
 			case 'replace':
 				return text = text.replace(this.regex, (match, p1) => {
-					return escapeNW(`<a href="https://namu.wiki/file/${fixedURIencode(p1)}">이미지</a>`);
+					return escapeNW(`<a href="https://namu.wiki/w/파일:${fixedURIencode(p1)}">이미지</a>`);
 				});
 		}
 
 		return text;
+	}
+}
+
+class PageCountRemover extends MacroRemover {
+	constructor() {
+		super('pagecount');
+	}
+
+	replace(type, match) {
+		switch(type) {
+			case 'replace':
+				//TODO handle
+				return '?';
+
+			case 'whole': return '';
+		}
+
+		return match;
 	}
 }
 
@@ -319,6 +395,18 @@ class QuoteRemover extends Remover{
 		}
 
 		return text;
+	}
+}
+
+class SimpleMacroRemover extends MacroRemover{
+	constructor(macroName) {
+		super(macroName);
+	}
+
+	replace(type, match) {
+		if(type === 'whole') return '';
+
+		return match;
 	}
 }
 
@@ -463,10 +551,15 @@ module.exports = {
 	hyperlink: new HyperlinkRemover(),
 
 	quote: new QuoteRemover(),
-	line: new SimpleTagRemover("\\[br\\]", "\n"),
+	line: new LineBreakRemover(),
 	youtube: new YoutubeRemover(),
 	table: new TableRemover(),
-	include: new IncludeRemover(),
+	include: new SimpleMacroRemover('include'),
+	toc: new MultipleDefinitionRemover(new SimpleMacroRemover('목차'), new SimpleMacroRemover('tableofcontents')),
+	footnote_macro: new MultipleDefinitionRemover(new SimpleMacroRemover('각주'), new SimpleMacroRemover('footnote')),
+	age: new AgeRemover(),
+	date: new DateRemover(),
+	pagecount: new PageCountRemover(),
 	footnote: new FootnoteRemover(),
 	finalizer: new Finalizer()
 };

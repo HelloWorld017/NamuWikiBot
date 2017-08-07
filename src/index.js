@@ -543,6 +543,49 @@ const getNamuwiki = async (url, redirectionCount = 0, waited = false) => {
 
 	overview = truncate(overview, config.overviewLength);
 	overview = `<b>${url}</b>\n${overview}\n\n<a href="${config.url}${fixedURIencode(url)}">자세히 보기</a>`;
+
+	/*const $ = cheerio.load(overview, {
+		xmlMode: true
+	});
+
+	//Unwrap nested tags
+	$.root().children().each((i, _el) => {
+		const el = $(_el);
+		if(!el) return;
+
+		const children = el.children();
+		if(!children) return;
+
+		children.each((i2, _el2) => {
+			const el2 = $(_el2);
+			if(!el2) return;
+
+			el2.html(el2.text());
+		});
+	});
+
+	overview = $.html().replace('<root>', '').replace('</root>', '').replace(/<([^<> ]*[^<>]*)\/>/g, '<$1></>');*/
+
+	const tagRegex = /(<([^<> ]+)(?:\s+\w+(?:="[^<>"=]+"))*>)(.+?)(<\/\2>)/g;
+
+	const toText = (text) => {
+		return text.replace(tagRegex, (match, startingTag, content, endTag) => {
+			if(content.match(tagRegex)) {
+				return toText(content);
+			}
+
+			return content;
+		});
+	};
+
+	overview = overview.replace(tagRegex, (match, startingTag, tagName, content, endTag) => {
+		if(content.match(tagRegex)) {
+			return toText(content);
+		}
+
+		return startingTag + content + endTag;
+	});
+
 	return {
 		overview,
 		links
