@@ -50,11 +50,12 @@ class MacroRemover extends Remover {
 	constructor(macroName) {
 		super();
 
-		this.regex = new RegExp("\\[" + macroName + "\\s*\\((.*?)\\)\\s*\\]", 'ig');
+		this.regex = new RegExp("\\[" + macroName + "(?:\\s*\\((.*?)\\)\\s*)?\\]", 'ig');
 	}
 
 	async remove(type, text, ctx) {
 		return text.replace(this.regex, (match, args) => {
+			console.log(this.replace);
 			return this.replace(type, match, args, ctx);
 		});
 	}
@@ -145,16 +146,22 @@ class BraceRemover extends Remover{
 }
 
 class DateRemover extends MacroRemover {
-	constructor() {
-		super('date');
+	constructor(macroName) {
+		super(macroName);
 	}
 
 	replace(type, match) {
 		switch(type) {
 			case 'replace':
 				const date = new Date();
-				return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}` +
-					` ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+				const pad2 = (str) => {
+					while(str.toString().length < 2) str = `0${str}`;
+
+					return str;
+				};
+
+				return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}` +
+					` ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
 
 			case 'whole': return '';
 		}
@@ -558,7 +565,7 @@ module.exports = {
 	toc: new MultipleDefinitionRemover(new SimpleMacroRemover('목차'), new SimpleMacroRemover('tableofcontents')),
 	footnote_macro: new MultipleDefinitionRemover(new SimpleMacroRemover('각주'), new SimpleMacroRemover('footnote')),
 	age: new AgeRemover(),
-	date: new DateRemover(),
+	date: new MultipleDefinitionRemover(new DateRemover('date'), new DateRemover('datetime')),
 	pagecount: new PageCountRemover(),
 	footnote: new FootnoteRemover(),
 	finalizer: new Finalizer()
