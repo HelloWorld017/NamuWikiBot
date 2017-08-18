@@ -569,7 +569,7 @@ const getNamuwiki = async (url, redirectionCount = 0, waited = false) => {
 	const tagRegex = /(<([^<> ]+)(?:\s+\w+(?:="[^<>"=]+"))*>)(.+?)(<\/\2>)/g;
 
 	const toText = (text) => {
-		return text.replace(tagRegex, (match, startingTag, content, endTag) => {
+		return text.replace(tagRegex, (match, startingTag, tagName, content, endTag) => {
 			if(content.match(tagRegex)) {
 				return toText(content);
 			}
