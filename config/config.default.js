@@ -2,9 +2,9 @@ module.exports = {
 	token: undefined,
 	hookUrl: 'https://namu.khinenw.tk/',
 	failSticker: [
-		"./resources/notfound0.webp",
-		"./resources/notfound1.webp",
-		"./resources/notfound2.webp"
+		"AAQFABPA2r0yAAQ83MiKrz-riLwdAAIC",
+		"AAQFABPW5b0yAAT1FavQm3UInFMEAAIC",
+		"CAADBQADMAADUZLAVkoN4oAcmBapAg"
 	],
 	userAgent: "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36",
 	url: "https://namu.wiki/w/",
