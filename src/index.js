@@ -104,9 +104,7 @@ const handleSearch = async (url, chatId) => {
 
 		await apiCall('sendSticker', {
 			chat_id: chatId,
-			sticker: fs.createReadStream(
-				config.failSticker[Math.floor(Math.random() * config.failSticker.length)]
-			),
+			sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)],
 			reply_markup: JSON.stringify({
 				inline_keyboard: results
 			})
