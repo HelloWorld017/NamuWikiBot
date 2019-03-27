@@ -16,6 +16,7 @@
     "html-truncate": "^1.2.2",
     "morgan": "^1.7.0",
     "object-merge": "^2.5.1",
+    "request": "^2.88.0",
     "request-promise": "^4.2.1"
   },
   "repository": {

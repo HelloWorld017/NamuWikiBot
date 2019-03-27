@@ -25,311 +25,7 @@ const namuwikiReqIds = [];
 const inlineResults = [];
 let lastRequest = 0;
 let inlineId = 0;
-const searchSelector = 'article.wiki-article section a:not(.page-link)';
 const attempt_text = translation.attempt.replace('%d', config.commandAmount);
-
-//Handles reply_markups
-const handleWikiLinks = (chatId, links, isSerialized = true) => {
-	const arr = [];
-	let temparr = [];
-
-	for(let i = 0; i < config.branchAmount; i++) {
-		if(links.length > i) {
-			const url = links[i];
-			const hash = crypto.createHash('md5').update(chatId + ':' + url).digest('hex');
-
-			inlineResults[hash] = {
-				url: '/nw ' + url,
-				to: chatId,
-				expires: Date.now() + 120 * 1000
-			};
-
-			temparr.push({
-				text: url,
-				callback_data: hash
-			});
-
-			if(temparr.length >= 2) {
-				arr.push(temparr);
-				temparr = [];
-			}
-		}
-	}
-
-	if(temparr.length > 0) arr.push(temparr);
-
-	if(isSerialized)
-		return JSON.stringify({
-			inline_keyboard: arr
-		});
-
-	return {
-		inline_keyboard: arr
-	};
-};
-
-//Handles 404 message
-const handleSearch = async (url, chatId) => {
-	let body = '';
-
-	try {
-		body = await rp({
-			method: 'get',
-			headers: {
-				'User-Agent': config.userAgent
-			},
-			url: `${config.searchUrl}${fixedURIencode(url)}`
-		});
-		const $ = cheerio.load(body);
-		const hrefs = $(searchSelector);
-		const results = [];
-
-		for(let i = 0; i < config.inlineAmount; i++) {
-			if(hrefs.length > i){
-				const url = decodeURIComponent($(hrefs.get(i)).attr('href').replace('/w/', ''));
-				const hash = crypto.createHash('md5').update(chatId + ':' + url).digest('hex');
-
-				inlineResults[hash] = {
-					url: '/nw ' + url,
-					to: chatId,
-					expires: Date.now() + 120 * 1000
-				};
-
-				results.push([{
-					text: url,
-					callback_data: hash
-				}]);
-			}
-		}
-
-		await apiCall('sendSticker', {
-			chat_id: chatId,
-			sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)],
-			reply_markup: JSON.stringify({
-				inline_keyboard: results
-			})
-		});
-
-	} catch(err) {
-		await logError(err, {Query: url}, chatId);
-		return;
-	}
-};
-
-//Handles /np Commands
-const handleQuery = async (from, chatId, message) => {
-	if(attempt(from)) {
-		await ignoredApiCall('sendMessage', {
-			chat_id: chatId,
-			text: attempt_text
-		});
-
-		return;
-	}
-
-	let body;
-	try {
-		body = await rp({
-			method: 'get',
-			headers: {
-				'User-Agent': config.userAgent
-			},
-			url: config.completeUrl + fixedURIencode(message.text.replace(/^\/nq(?:@[a-zA-Z0-9]*)?[ ]*/, ''))
-		});
-	} catch(err) {
-		await logError(err, chatId);
-		return;
-	}
-
-	const arr = handleWikiLinks(chatId, JSON.parse(body));
-
-	await ignoredApiCall('sendMessage', {
-		chat_id: chatId,
-		text: translation.search,
-		reply_markup: arr
-	});
-};
-
-//Handles /nw Commands
-const handleWiki = async (from, chatId, message) => {
-	if(attempt(from)){
-		await ignoredApiCall('sendMessage', {
-			chat_id: chatId,
-			text: attempt_text
-		});
-
-		return;
-	}
-
-	const url = message.text.replace(/^\/nw(?:@[a-zA-Z0-9]*)?[ ]*/, '');
-	if(url === ''){
-		await ignoredApiCall('sendMessage', {
-			chat_id: chatId,
-			text: translation.usage.join('\n'),
-			disable_web_page_preview: "true",
-			parse_mode: "html"
-		});
-
-		return;
-	}
-
-	let overview, links;
-
-	try {
-		({overview, links} = await getNamuwiki(url));
-	} catch (err) {
-		if(err.status === 404) {
-			await handleSearch(url, chatId);
-		} else if(err.status === 503) {
-			await ignoredApiCall('sendMessage', {
-				chat_id: chatId,
-				text: translation.sucuri
-			});
-		} else {
-			await logError(err, {
-				Query: url
-			}, chatId);
-		}
-		return;
-	}
-
-	const arr = handleWikiLinks(chatId, links);
-
-	try {
-		await apiCall('sendMessage', {
-			chat_id: chatId,
-			text: overview,
-			parse_mode: 'html',
-			reply_markup: arr,
-			disable_web_page_preview: 'false'
-		});
-	} catch (err) {
-		await logError(err, {Query: url}, chatId);
-	}
-};
-
-//Handles @namuwikiBot inline search
-const handleInline = async (from, query, id) => {
-	if(attempt(from)){
-		await ignoredApiCall('answerInlineQuery', {
-			inline_query_id: id,
-			results: [{
-				type: 'article',
-				id: 'query_too_fast',
-				title: translation.query_too_fast,
-				input_message_content: {
-					message_text: attempt_text
-				}
-			}]
-		});
-
-		return;
-	}
-
-	let complete = [];
-
-	try {
-		complete = await rp({
-			method: 'get',
-			headers: {
-				'User-Agent': config.userAgent
-			},
-			url: `${config.completeUrl}${fixedURIencode(query)}`,
-			json: true
-		});
-
-		if(!Array.isArray(complete)) {
-			const err = new Error("Returned object is not an array!");
-			err.value = complete;
-
-			throw err;
-		}
-	} catch (err) {
-		await logError(err, {
-			Inline: true,
-			Query: query,
-			From: from
-		});
-
-		await ignoredApiCall('answerInlineQuery', {
-			inline_query_id: id,
-			results: [{
-				type: 'article',
-				id: 'query_error',
-				title: translation.query_error,
-				input_message_content: {
-					message_text: translation.error
-				}
-			}]
-		});
-
-		return;
-	}
-
-	const results = [];
-
-	for(let url of complete.slice(0, config.inlineAmount)) {
-		let overview = '', links = [];
-
-		try {
-			({overview, links} = await getNamuwiki(url));
-		} catch (err) {
-			if(err.status === 503) {
-				results.push({
-					type: 'article',
-					id: 'query_sucuri',
-					title: translation.query_error,
-					input_message_content: {
-						message_text: translation.sucuri
-					}
-				});
-			} else if(err.status !== 404) {
-				await logError(err, {
-					Inline: true,
-					Query: url,
-					From: from
-				});
-			}
-			continue;
-		}
-
-		//const arr = handleWikiLinks(from, links, false);
-
-		results.push({
-			type: 'article',
-			id: crypto.createHash('md5').update(url).digest('hex'),
-			title: url,
-			message_text: overview,
-			parse_mode: 'html',
-			//reply_markup: arr,
-			url: config.url + fixedURIencode(url)
-		});
-	};
-
-	try {
-		await apiCall('answerInlineQuery', {
-			inline_query_id: id,
-			results: JSON.stringify(results)
-		});
-	} catch(e) {
-		logError(e, {
-			Inline: true,
-			Query: query,
-			From: from
-		});
-	}
-};
-
-//Handles overall messages
-const handleMessage = async (from, chatId, message) => {
-	if(message.text.startsWith('/nq')){
-		await handleQuery(from, chatId, message);
-	}
-
-	if(message.text.startsWith('/nw')){
-		await handleWiki(from, chatId, message);
-	}
-};
 
 namuRouter.on('message', async (message) => {
 	const chatId = message.chat.id;
@@ -341,7 +37,7 @@ namuRouter.on('message', async (message) => {
 
 namuRouter.on('inline.callback.query', async (query) => {
 	try{
-		await apiCall('answerCallbackQuery', {
+		await telegram.apiCall('answerCallbackQuery', {
 			callback_query_id: query.id
 		});
 	} catch(err) {
@@ -352,7 +48,7 @@ namuRouter.on('inline.callback.query', async (query) => {
 	const queryData = inlineResults[query.data];
 
 	if(queryData === undefined){
-		await ignoredApiCall('sendMessage', {
+		await telegram.ignoredApiCall('sendMessage', {
 			chat_id: query.from.id,
 			text: translation.query_invalid
 		});
@@ -366,51 +62,8 @@ namuRouter.on('inline.callback.query', async (query) => {
 });
 
 namuRouter.on('inline.query', async (query) => {
-	await handleInline(query.from.id, query.query, query.id);
+	await api.handleInline(query.from.id, query.query, query.id);
 });
-
-setInterval(() => {
-	Object.keys(inlineResults).forEach((k) => {
-		if(inlineResults[k].expires < Date.now()){
-			inlineResults[k] = undefined;
-			delete inlineResults[k];
-		}
-	});
-}, config.gcInterval);
-
-const log = async (logContents, chatId) => {
-	if(chatId)
-		await ignoredApiCall('sendMessage', {
-			chat_id: chatId,
-			text: translation.error
-		});
-
-	console.log(chalk.bgRed("=======Starting error report======="));
-
-	Object.keys(logContents).forEach((k) => {
-		const v = logContents[k];
-		console.log(chalk.yellow(k + " : " + v));
-	});
-
-	console.log(chalk.bgRed("========End of error report========"));
-};
-
-const logError = async (err, additionalInformation, chatId) => {
-	if(err.name === 'StatusCodeError') {
-		err.response = {};
-	}
-	const logObject = {
-		Time: new Date().toUTCString(),
-		Error: util.inspect(err),
-		From: chatId
-	};
-
-	Object.keys(additionalInformation).forEach((k) => {
-		logObject[k] = additionalInformation[k];
-	});
-
-	return await log(logObject, chatId);
-};
 
 const attempt = (from) => {
 	if(namuwikiReqIds[from] !== undefined){
@@ -445,7 +98,7 @@ const ignoredApiCall = async (...args) => {
 	try {
 		return await apiCall(...args);
 	} catch(err) {}
-}
+};
 
 const isEmptyText = (text) => text.trim().length === 0;
 
