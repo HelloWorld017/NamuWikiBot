@@ -1,3 +1,5 @@
+const config = require('../config');
+
 const EventEmitter = require('events');
 const {Router} = require('express');
 
@@ -14,7 +16,7 @@ class NamuRouter extends EventEmitter {
 		});
 	}
 
-	handleUpdate(item) {
+	handleItem(item) {
 		this.emit('update', item);
 
 		if(item.callback_query) {

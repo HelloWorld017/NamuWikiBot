@@ -1,4 +1,5 @@
 "use strict";
+
 const LT = `\u{E2E2}NW_BOT_LT_MARK\u{EE22}`;
 const GT = `\u{E2E2}NW_BOT_RT_MARK\u{EE22}`;
 const AMP = `\u{E2E2}NW_BOT_AMP_MARK\u{EE22}`;
@@ -34,7 +35,7 @@ unescapeNWMap[QUOT] = '"';
 
 const unescapeNW = (text) => replaceMap(text, unescapeNWMap);
 
-const fixedURIencode = require('./encoder');
+const {fixedURIencode} = require('./Utils');
 
 class Remover{
 	constructor(){
@@ -484,7 +485,7 @@ class TableRemover extends Remover{
 			case 'tag':
 				text = text
 					.replace(/<#[a-fA-F0-9]{3,6}?>/g, '') //<#000000> 꼴 제거
-					.replace(/\|\|/g, '') // || 제거
+					.replace(/\|\|/g, ' ') // || 변환
 					.replace(/<\|[0-9]+>/g, '') //<|숫자> 꼴 제거
 					.replace(/<-[0-9]+>/g, '') //<-숫자> 꼴 제거
 					.replace(/<table.*?=.*?>/g, '') //<table???=???> 꼴 제거
@@ -503,7 +504,7 @@ class TableRemover extends Remover{
 class YoutubeRemover extends Remover {
 	constructor() {
 		super();
-		this.regex = /\[youtube\(([a-zA-Z0-9]+)(?:,.*)*\)\]/gi;
+		this.regex = /\[youtube\(([a-zA-Z0-9_-]+)(?:,.*)*\)\]/gi;
 	}
 
 	async remove(type, text) {
@@ -547,6 +548,8 @@ module.exports = {
 	subscript: new SimpleTagRemover(",,"),
 
 	html: new BraceRemover("#!html"),
+	syntax: new BraceRemover("#!syntax"),
+	wiki: new BraceRemover("#!wiki"),
 	size: new BraceRemover("\\+[0-5]"),
 	color: new BraceRemover("#[a-zA-Z0-9]+"),
 	nomarkup: new BraceRemover(""),
@@ -562,6 +565,7 @@ module.exports = {
 	youtube: new YoutubeRemover(),
 	table: new TableRemover(),
 	include: new SimpleMacroRemover('include'),
+	math: new SimpleMacroRemover('math'),
 	toc: new MultipleDefinitionRemover(new SimpleMacroRemover('목차'), new SimpleMacroRemover('tableofcontents')),
 	footnote_macro: new MultipleDefinitionRemover(new SimpleMacroRemover('각주'), new SimpleMacroRemover('footnote')),
 	age: new AgeRemover(),

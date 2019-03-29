@@ -1,6 +1,15 @@
+const Attempt = require('./Attempt');
+
+const config = require('../config');
+const {fixedURIencode} = require('./Utils');
+const getNamuwiki = require('./Namuwiki');
+const rp = require('request-promise');
+
 class ApiHandler {
-	constructor(config, inlineStore, telegram, translation) {
-		this.inlineStore = new InlineStore(config);
+	constructor(inlineStore, logger, telegram, translation) {
+		this.attempt = new Attempt(config, translation);
+		this.inlineStore = inlineStore;
+		this.logger = logger;
 		this.telegram = telegram;
 		this.translation = translation;
 	}
@@ -8,14 +17,14 @@ class ApiHandler {
 	/* ==========
 	* Get Reply Markup
 	* ========== */
-	async wikiLinks(chatId, links, isSerialized = true) {
+	wikiLinks(chatId, links, isSerialized = true) {
 		const arr = [];
 		let temparr = [];
 
-		for(let i = 0; i < config.branchAmount; i++) {
+		for(let i = 0; i < config.namuwiki.branchAmount; i++) {
 			if(links.length > i) {
 				const url = links[i];
-				this.inlineStore.add(hash, url);
+				const hash = this.inlineStore.add(url, chatId);
 
 				temparr.push({
 					text: url,
@@ -52,15 +61,15 @@ class ApiHandler {
 			body = await rp({
 				method: 'get',
 				headers: {
-					'User-Agent': config.userAgent
+					'User-Agent': config.request.userAgent
 				},
-				url: `${config.searchUrl}${fixedURIencode(url)}`
+				url: `${config.request.searchUrl}${fixedURIencode(url)}`
 			});
 			const $ = cheerio.load(body);
 			const hrefs = $(searchSelector);
 			const results = [];
 
-			for(let i = 0; i < config.inlineAmount; i++) {
+			for(let i = 0; i < config.inline.amount; i++) {
 				if(hrefs.length > i){
 					const url = decodeURIComponent($(hrefs.get(i)).attr('href').replace('/w/', ''));
 					this.inlineStore.add(url, chatId);
@@ -72,7 +81,7 @@ class ApiHandler {
 				}
 			}
 
-			await Telegram.apiCall('sendSticker', {
+			await this.telegram.apiCall('sendSticker', {
 				chat_id: chatId,
 				sticker: config.failSticker[Math.floor(Math.random() * config.failSticker.length)],
 				reply_markup: JSON.stringify({
@@ -90,10 +99,10 @@ class ApiHandler {
 	* Command /nq
 	* ========== */
 	async handleQuery(from, chatId, message) {
-		if(attempt(from)) {
+		if(this.attempt.attempt(from)) {
 			await this.telegram.ignoredApiCall('sendMessage', {
 				chat_id: chatId,
-				text: attempt_text
+				text: this.attempt.text
 			});
 
 			return;
@@ -104,9 +113,10 @@ class ApiHandler {
 			body = await rp({
 				method: 'get',
 				headers: {
-					'User-Agent': config.userAgent
+					'User-Agent': config.request.userAgent
 				},
-				url: config.completeUrl + fixedURIencode(message.text.replace(/^\/nq(?:@[a-zA-Z0-9]*)?[ ]*/, ''))
+				url: config.request.completeUrl +
+					fixedURIencode(message.text.replace(/^\/nq(?:@[a-zA-Z0-9]*)?[ ]*/, ''))
 			});
 		} catch(err) {
 			await this.logger.logError(err, chatId);
@@ -126,10 +136,10 @@ class ApiHandler {
 	* Command /nw
 	* ========== */
 	async handleWiki(from, chatId, message) {
-		if(attempt(from)){
+		if(this.attempt.attempt(from)) {
 			await this.telegram.ignoredApiCall('sendMessage', {
 				chat_id: chatId,
-				text: attempt_text
+				text: this.attempt.text
 			});
 
 			return;
@@ -186,7 +196,7 @@ class ApiHandler {
 	* @namuwikiBot Inline Search
 	* ========== */
 	async handleInline(from, query, id) {
-		if(attempt(from)){
+		if(this.attempt.attempt(from)){
 			await this.telegram.ignoredApiCall('answerInlineQuery', {
 				inline_query_id: id,
 				results: [{
@@ -194,7 +204,7 @@ class ApiHandler {
 					id: 'query_too_fast',
 					title: this.translation.query_too_fast,
 					input_message_content: {
-						message_text: attempt_text
+						message_text: this.attempt.text
 					}
 				}]
 			});
@@ -208,9 +218,9 @@ class ApiHandler {
 			complete = await rp({
 				method: 'get',
 				headers: {
-					'User-Agent': config.userAgent
+					'User-Agent': config.request.userAgent
 				},
-				url: `${config.completeUrl}${fixedURIencode(query)}`,
+				url: `${config.request.completeUrl}${fixedURIencode(query)}`,
 				json: true
 			});
 
@@ -244,7 +254,7 @@ class ApiHandler {
 
 		const results = [];
 
-		for(let url of complete.slice(0, config.inlineAmount)) {
+		for(let url of complete.slice(0, config.inline.amount)) {
 			let overview = '', links = [];
 
 			try {
@@ -275,7 +285,7 @@ class ApiHandler {
 				title: url,
 				message_text: overview,
 				parse_mode: 'html',
-				url: config.url + fixedURIencode(url)
+				url: config.request.url + fixedURIencode(url)
 			});
 		};
 
@@ -306,3 +316,5 @@ class ApiHandler {
 		}
 	}
 }
+
+module.exports = ApiHandler;

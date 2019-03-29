@@ -1,13 +1,17 @@
-const Telegram = require('./Telegram');
+const chalk = require('chalk');
+const util = require('util');
 
 class Logger {
-	constructor(translation) {
+	constructor(telegram, translation) {
+		this.telegram = telegram;
 		this.translation = translation;
+
+		telegram.logger = this;
 	}
 
-	async log (logContents, chatId) {
+	async log(logContents, chatId) {
 		if(chatId)
-			await Telegram.ignoredApiCall('sendMessage', {
+			await this.telegram.ignoredApiCall('sendMessage', {
 				chat_id: chatId,
 				text: this.translation.error
 			});

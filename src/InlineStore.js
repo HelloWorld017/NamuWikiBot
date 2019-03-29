@@ -1,10 +1,13 @@
+const crypto = require('crypto');
+const config = require('../config');
+
 class InlineStore {
-	constructor(config) {
+	constructor() {
 		this.store = {};
 
 		setInterval(() => {
 			this.removeExpired();
-		}, config.gcInterval);
+		}, config.inline.gcInterval);
 	}
 
 	add(url, chatId) {
@@ -15,6 +18,8 @@ class InlineStore {
 			to: chatId,
 			expires: Date.now() + 120 * 1000
 		};
+
+		return hash;
 	}
 
 	removeExpired() {
@@ -24,6 +29,10 @@ class InlineStore {
 				delete this.store[k];
 			}
 		});
+	}
+
+	get(key) {
+		return this.store[key];
 	}
 }
 
