@@ -1,10 +1,11 @@
 const Tokenizer = require("./Tokenizer");
 
 class RegexTokenizer extends Tokenizer {
-	constructor(name, regex) {
+	constructor(name, regex, negativeLookBehind = '\\') {
 		super(name);
 
 		this.regex = regex;
+		this.negativeLookBehind = negativeLookBehind;
 	}
 
 	tokenize(string) {
@@ -15,9 +16,10 @@ class RegexTokenizer extends Tokenizer {
 				token: {
 					name: this.name,
 					content: match[0],
-					match
+					match: [...match]
 				},
-				length: match[0].length
+				length: match[0].length,
+				at: match.index
 			}
 		}
 

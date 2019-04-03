@@ -1,22 +1,53 @@
 const RegexTokenizer = require('./RegexTokenizer');
 
 const tokenizers = [
+	new RegexTokenizer('Escape', /\\\\/, null),
 	new RegexTokenizer('Footnote', /\[\*[^ ]*[ ]*(.*?[^\]])[\]]{1}(?!\]+)/),
 	new RegexTokenizer('Macro', /\[([a-z]+)(?:\s*\((.*?)\)\s*)?\]/i),
-	new RegexTokenizer('Inline', /('''|''|__|--|~~|\^\^|,,|)[^]*?\1/),
-	new RegexTokenizer('Link', /\[\[([^\[\]\|]*?)(?:\|([^\[\]]*?))?\]\]/),
-	new RegexTokenizer('Brace', /{{{([#!a-zA-Z0-9+]*)[^]*?}}}/),
-	new RegexTokenizer('Quote', /^\n>(.*)$/m)
+	new RegexTokenizer('Inline', /('''|''|__|--|~~|\^\^|,,)/),
+	new RegexTokenizer('LinkOpen', /\[\[/),
+	new RegexTokenizer('LinkClose', /\]\]/),
+	new RegexTokenizer('BraceOpen', /{{{([#!a-zA-Z0-9+]*)/),
+	new RegexTokenizer('BraceClose', /}}}/),
+	new RegexTokenizer('Quote', /^\n>(.*)$/m, null)
+	//TODO table
 ];
 
 const tokenize = text => {
-	const escapeMaps = {};
+	const tokens = [];
 
-	let i = 0;
-	text.replace(/\\(.)/g, (match, p1) => {
-		escapeMaps[i] = p1;
-		i++;
+	let tokenizing = text;
+	while(tokenizing.length > 0) {
+		let minimum = {token: null, length: 0, at: Infinity};
 
-		return `\uff22${i}\uffee`;
-	});
+		tokenizers.forEach(tokenizer => {
+			const result = tokenizer.tokenize(tokenizing);
+			if(result.token && result.at < minimum.at) {
+				minimum = result;
+			}
+		});
+
+		if(!isFinite(minimum.at)) {
+			tokens.push({
+				name: 'Text',
+				content: tokenizing
+			});
+			break;
+		}
+
+		const textContent = tokenizing.slice(0, minimum.at);
+		if(textContent.length > 0) {
+			tokens.push({
+				name: 'Text',
+				content: textContent
+			});
+		}
+
+		tokens.push(minimum.token);
+		tokenizing = tokenizing.slice(minimum.at + minimum.length);
+	}
+
+	return tokens;
 };
+
+module.exports = tokenize;
