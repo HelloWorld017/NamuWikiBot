@@ -367,6 +367,28 @@ class NamuImageRemover extends Remover{
 	}
 }
 
+class NicovideoRemover extends Remover {
+	constructor() {
+		super();
+		this.regex = /\[nicovideo\(([sm0-9]+)\)\]/gi;
+	}
+
+	async remove(type, text) {
+		switch(type) {
+			case 'whole':
+				return text.replace(this.regex, '');
+
+			case 'replace':
+				return text.replace(
+					this.regex,
+					(match, p1) => escapeNW(`<a href="https://embed.nicovideo.jp/watch/${p1}">동영상</a>`)
+				);
+		}
+
+		return text;
+	}
+}
+
 class PageCountRemover extends MacroRemover {
 	constructor() {
 		super('pagecount');
@@ -563,6 +585,7 @@ module.exports = {
 	quote: new QuoteRemover(),
 	line: new LineBreakRemover(),
 	youtube: new YoutubeRemover(),
+	nicovideo: new NicovideoRemover(),
 	table: new TableRemover(),
 	include: new SimpleMacroRemover('include'),
 	math: new SimpleMacroRemover('math'),
