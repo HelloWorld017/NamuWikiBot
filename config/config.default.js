@@ -1,5 +1,5 @@
 module.exports = {
-	token: undefined,
+	token: null,
 
 	update: {
 		mode: 'passive',

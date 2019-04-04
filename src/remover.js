@@ -589,9 +589,11 @@ module.exports = {
 	table: new TableRemover(),
 	include: new SimpleMacroRemover('include'),
 	math: new SimpleMacroRemover('math'),
+	anchor: new SimpleMacroRemover('anchor'),
 	toc: new MultipleDefinitionRemover(new SimpleMacroRemover('목차'), new SimpleMacroRemover('tableofcontents')),
 	footnote_macro: new MultipleDefinitionRemover(new SimpleMacroRemover('각주'), new SimpleMacroRemover('footnote')),
 	age: new AgeRemover(),
+	//TODO dday, ruby
 	date: new MultipleDefinitionRemover(new DateRemover('date'), new DateRemover('datetime')),
 	pagecount: new PageCountRemover(),
 	footnote: new FootnoteRemover(),
