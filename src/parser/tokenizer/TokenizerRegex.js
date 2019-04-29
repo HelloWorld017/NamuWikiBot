@@ -1,11 +1,18 @@
 const Tokenizer = require("./Tokenizer");
 
-class RegexTokenizer extends Tokenizer {
+class TokenizerRegex extends Tokenizer {
 	constructor(name, regex, negativeLookBehind = '\\') {
 		super(name);
 
-		this.regex = regex;
+		this.originalRegex = regex;
 		this.negativeLookBehind = negativeLookBehind;
+		
+		const regexStr = regex.source;
+		const concatedRegex = negativeLookBehind === null
+			? regexStr
+			: '(?<!\\' + negativeLookBehind + ')' + regexStr;
+		
+		this.regex = new RegExp(concatedRegex, regex.flags);
 	}
 
 	tokenize(string) {
@@ -30,4 +37,4 @@ class RegexTokenizer extends Tokenizer {
 	}
 }
 
-module.exports = RegexTokenizer;
+module.exports = TokenizerRegex;
