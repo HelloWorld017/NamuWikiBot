@@ -15,6 +15,24 @@ const processors = [
 ];
 
 const flatten = tokens => tokens.map(v => v.content).join('');
+const splitProcessorTokenizer = processorOrTokenizerNames => {
+	const processorNames = [];
+	const tokenizerNames = processorOrTokenizerNames
+		.map(name => {
+			const foundProcessor = processors.find(v => v.name === name);
+			if(foundProcessor !== undefined) {
+				processorNames.push(name);
+				return foundProcessor.tokens;
+			}
+			return name;
+		})
+		.reduce((prev, curr) => prev.concat(curr), []);
+	
+	return {
+		processorNames,
+		tokenizerNames
+	};
+};
 const parseInternal = (processorOrTokenizerNames, context, debug = false) => contentOrTokens => {
 	let content = contentOrTokens;
 	if(typeof contentOrTokens === 'string') {
@@ -39,17 +57,7 @@ const parseInternal = (processorOrTokenizerNames, context, debug = false) => con
 		return array;
 	}, []);
 	
-	const processorNames = [];
-	const tokenizerNames = processorOrTokenizerNames
-		.map(name => {
-			const foundProcessor = processors.find(v => v.name === name);
-			if(foundProcessor !== undefined) {
-				processorNames.push(name);
-				return foundProcessor.tokens;
-			}
-			return name;
-		})
-		.reduce((prev, curr) => prev.concat(curr), []);
+	const {processorNames, tokenizerNames} = splitProcessorTokenizer(processorOrTokenizerNames);
 	
 	const tokenizeUsing = tokenize(tokenizerNames);
 	const tokenized = content.reduce((array, v) => {
@@ -67,15 +75,22 @@ const parseInternal = (processorOrTokenizerNames, context, debug = false) => con
 
 const process = (processorNames, context, debug=false) => tokens => {
 	const usingProcessors = processors.filter(v => processorNames.includes(v.name));
-	processors.forEach(processor => {
+	usingProcessors.forEach(processor => {
+		const {tokenizerNames} = splitProcessorTokenizer(processor.inside);
+		const tokenizeUsing = tokenize(tokenizerNames);
+
+		const tools = {
+			parse: parseInternal(processor.inside, context, debug),
+			tokenize: tokenizeUsing,
+			flatten
+		};
+		
 		let tokenLength = tokens.length;
 		for(let i = 0; i < tokenLength; i++) {
 			if(!processor.isStartOf(tokens, i)) continue;
 			
-			const {end, node} = processor.process(tokens, i, {
-				parse: parseInternal(processor.inside, context, debug),
-				flatten
-			}, context, debug);
+			
+			const {end, node} = processor.process(tokens, i, tools, context, debug);
 			tokens.splice(i, end - i + 1, ...node);
 			tokenLength = tokens.length;
 		}

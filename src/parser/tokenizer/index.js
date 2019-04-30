@@ -13,23 +13,29 @@ const tokenizers = [
 	new TokenizerRegex('BraceOpen', /{{{([#!a-zA-Z0-9+]*)[^\S\r\n]*/),
 	new TokenizerRegex('BraceClose', /\s*}}}/),
 	
-	new TokenizerRegex('TableDecoration', /<((?:table )?)([a-z]+?)=([^>]*?)>/),
-	new TokenizerRegex('TableDivider', /\|\|+/),
-	new TokenizerRegex('TableVAlignMerge', /<((?:\^v)?)\|([0-9]+)>/),
-	new TokenizerRegex('TableHMerge', /<-([0-9]+)>/),
-	new TokenizerRegex('TableHAlign', /<([\(\):])>/),
-	new TokenizerRegex('TableCaption', /\|([^\[\]]*?)\|/),
-	new TokenizerRegex('TableColorDecoration', /<((?:[a-z]+)|(?:#[0-9a-f]{3,6}))>/),
+	new TokenizerRegexLine('TableRowStart', /^[^\S\r\n]*\|([^\[\]\|]*?)?\|((?:\|\|)*)/),
+	new TokenizerRegexLine('TableRowEnd', /((?:\|\|)+)[^\S\r\n]*$/, true),
 	
 	new TokenizerRegexLine('Quote', /^>(.*)$/),
 	new TokenizerRegexLine('Horizontal', /^-{4,9}$/),
 	new TokenizerRegexLine('Annotation', /^##(.*)$/),
-	new TokenizerRegexLine('List', /^(\s+)([1IiAa]\.|\*)([^]*?)\n$/)
-	
+	new TokenizerRegexLine('List', /^([^\S\r\n]+)([1IiAa]\.|\*)([^]*?)\n$/)
+];
+
+const tokenizerInternal = [
+	new TokenizerRegex('TableDecoration', /<((?:table )?)([a-z]+?)=([^>]*?)>/),
+	new TokenizerRegex('TableDivider', /(?<!^)((?:\|\|)+)(?!$)/),
+	new TokenizerRegex('TableVAlignMerge', /<((?:\^v)?)\|([0-9]+)>/),
+	new TokenizerRegex('TableHMerge', /<-([0-9]+)>/),
+	new TokenizerRegex('TableHAlign', /<([\(\):])>/),
+	new TokenizerRegex('TableColorDecoration', /<((?:[a-z]+)|(?:#[0-9a-f]{3,6}))>/)
 ];
 
 const tokenize = tokenNames => text => {
-	const usingTokenizers = tokenizers.filter(v => tokenNames.includes(v.name));
+	const usingTokenizers = [
+		...tokenizers.filter(v => tokenNames.includes(v.name)),
+		...tokenizerInternal.filter(v => tokenNames.includes(v.name))
+	];
 	const tokens = [];
 
 	let tokenizing = text;
