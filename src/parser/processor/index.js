@@ -88,5 +88,12 @@ module.exports = process;
 module.exports.parse = (text, ...args) => parseInternal([
 	'Escape',
 	'Footnote',
+	...tokenize.tokenizers.map(v => v.name),
 	...processors.map(v => v.name)
-], ...args)(text);
+].reduce((prev, v) => {
+	if(!prev.includes(v)) {
+		prev.push(v);
+	}
+	
+	return prev;
+}, []), ...args)(text);

@@ -4,9 +4,7 @@ class TokenizerRegexLine extends Tokenizer {
 	constructor(name, regex) {
 		super(name);
 
-		this.regex = regex;
-		this.regex.global = true;
-		this.regex.multiline = true;
+		this.regex = new RegExp(regex.source, 'gm' + regex.flags);
 	}
 
 	tokenize(string, original, index) {

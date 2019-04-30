@@ -4,26 +4,27 @@ const TokenizerRegexLine = require('./TokenizerRegexLine');
 const tokenizers = [
 	new TokenizerRegex('Escape', /\\\\/, null),
 	new TokenizerRegex('Footnote', /\[\*[^ ]*[ ]*(.*?[^\]])[\]]{1}(?!\]+)/),
-	new TokenizerRegex('Macro', /\[([a-z]+)(?:\s*\((.*?)\)\s*)?\]/i),
+	new TokenizerRegex('Macro', /\[([a-z]+)(?:[^\S\r\n]*\((.*?)\)[^\S\r\n]*)?\]/i),
 	new TokenizerRegex('Inline', /('''|''|__|--|~~|\^\^|,,)/),
 	
 	new TokenizerRegex('LinkOpen', /\[\[/),
 	new TokenizerRegex('LinkClose', /\]\]/),
 	
-	new TokenizerRegex('BraceOpen', /{{{([#!a-zA-Z0-9+]*)\s*/),
+	new TokenizerRegex('BraceOpen', /{{{([#!a-zA-Z0-9+]*)[^\S\r\n]*/),
 	new TokenizerRegex('BraceClose', /\s*}}}/),
 	
-	new TokenizerRegex('TableDecoration', /<(table )?([a-z]+?)=([^>]*?)>/),
-	new TokenizerRegex('TableDivider', /( ?)(\|\|)+( ?)/),
-	new TokenizerRegex('TableVAlignMerge', /<(\^v)?\|([0-9]+)>/),
+	new TokenizerRegex('TableDecoration', /<((?:table )?)([a-z]+?)=([^>]*?)>/),
+	new TokenizerRegex('TableDivider', /\|\|+/),
+	new TokenizerRegex('TableVAlignMerge', /<((?:\^v)?)\|([0-9]+)>/),
 	new TokenizerRegex('TableHMerge', /<-([0-9]+)>/),
 	new TokenizerRegex('TableHAlign', /<([\(\):])>/),
-	new TokenizerRegex('TableCaption', /\|.*?\|/),
+	new TokenizerRegex('TableCaption', /\|([^\[\]]*?)\|/),
+	new TokenizerRegex('TableColorDecoration', /<((?:[a-z]+)|(?:#[0-9a-f]{3,6}))>/),
 	
 	new TokenizerRegexLine('Quote', /^>(.*)$/),
 	new TokenizerRegexLine('Horizontal', /^-{4,9}$/),
 	new TokenizerRegexLine('Annotation', /^##(.*)$/),
-	new TokenizerRegexLine('List', /^(\s+)([1IiAa]\.|\*)([^]*?)\n\s*$/)
+	new TokenizerRegexLine('List', /^(\s+)([1IiAa]\.|\*)([^]*?)\n$/)
 	
 ];
 
@@ -71,3 +72,4 @@ const tokenize = tokenNames => text => {
 };
 
 module.exports = tokenize;
+module.exports.tokenizers = tokenizers;
