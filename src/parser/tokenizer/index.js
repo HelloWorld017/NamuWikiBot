@@ -17,7 +17,7 @@ const tokenizers = [
 	new TokenizerRegexLine('TableRowStart', /^[^\S\r\n]*\|([^\[\]\|]*?)?\|((?:\|\|)*)/),
 	new TokenizerRegexLine('TableRowEnd', /((?:\|\|)+)[^\S\r\n]*$/, true),
 	
-	new TokenizerRegexLine('Quote', /^(>+)(.*)$/),
+	new TokenizerRegexLine('Quote', /^(>+)\s*(.*)$/),
 	new TokenizerRegexLine('Horizontal', /^-{4,9}$/),
 	new TokenizerRegexLine('Annotation', /^##(.*)$/),
 	new TokenizerRegexLine('List', /^([^\S\r\n]+)([1IiAa]\.|\*)((?:#[0-9+])?)([^]*?)$/)

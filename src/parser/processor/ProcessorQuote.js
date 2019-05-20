@@ -75,7 +75,8 @@ class ProcessorQuote extends Processor {
 				return;
 			}
 			
-			const [level, text] = quote.match.slice(1);
+			let [level, text] = quote.match.slice(1);
+			level = level.length;
 			
 			if(level > previousLevel) {
 				previousLevel = level;
@@ -90,17 +91,21 @@ class ProcessorQuote extends Processor {
 					],
 					level,
 					parent: leafNode,
-					content: quote.match
+					content: quote.match[0]
 				};
-				
+				leafNode.children.push(newNode);
 				leafNode = newNode;
 				return;
 			}
 			
 			if(level < previousLevel) {
-				leafNode = leafNode.parent;
-				leafNode.children = parse(flatten(leafNode.children));
+				previousLevel = level;
+				leafNode.children = parse(leafNode.children);
+				
+				const parent = leafNode.parent;
 				delete leafNode.parent;
+				
+				leafNode = parent;
 			}
 			
 			const sibiling = leafNode.children[leafNode.children.length - 1];
@@ -115,6 +120,7 @@ class ProcessorQuote extends Processor {
 		});
 		
 		if(leafNode.parent) {
+			leafNode.children = parse(leafNode.children);
 			delete leafNode.parent;
 		}
 		
