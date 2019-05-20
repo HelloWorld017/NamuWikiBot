@@ -2,10 +2,15 @@ const ParagraphParser = require('./ParagraphParser');
 const {parse} = require('./processor');
 
 module.exports = (text, context, targetParagraph = '1', debug = false) => {
-	const paragraphs = ParagraphParser.parse(text);
-	if(!paragraphs[targetParagraph]) {
-		targetParagraph = '';
+	let content = text;
+	
+	if(targetParagraph !== '*') {
+		const paragraphs = ParagraphParser.parse(text);
+		if(!paragraphs[targetParagraph]) {
+			targetParagraph = '';
+		}
+		content = paragraphs[targetParagraph];
 	}
 	
-	return parse(paragraphs[targetParagraph], context, debug);
+	return parse(content, context, debug);
 };

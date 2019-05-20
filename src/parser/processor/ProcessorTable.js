@@ -100,6 +100,15 @@ class ProcessorTable extends Processor {
 			
 			switch(token.name) {
 				case 'TableRowStart': {
+					const lastCell = table.cells[`${x}:${y}`];
+					const lastElem = lastCell.children[lastCell.children.length - 1];
+					if(lastElem.name === 'Text') {
+						lastElem.content = lastElem.content.replace(/\s*$/, '');
+						if(lastElem.content === '') {
+							lastCell.children.pop();
+						}
+					}
+					
 					x = 0;
 					y++;
 					
@@ -205,11 +214,23 @@ class ProcessorTable extends Processor {
 		});
 		
 		Object.keys(table.cells).forEach(k => {
-			const children = table.cells[k].children;
+			const children = table.cells[k].children.reduce((prev, curr) => {
+				if(prev[prev.length - 1] && prev[prev.length - 1].name === 'Text' && curr.name === 'Text') {
+					prev[prev.length - 1].content += curr.content;
+				} else {
+					prev.push(curr);
+				}
+				return prev;
+			}, []);
+			
 			if(children.length === 0) return;
 			
 			table.cells[k].align.left = children[0].content.startsWith(' ');
 			table.cells[k].align.right = children[children.length - 1].content.endsWith(' ');
+			
+			children[0].content = children[0].content
+				.replace(/^\s*/, '')
+				.replace(/\s*$/, '');
 			
 			if(table.cells[k].align.forceLeft) {
 				table.cells[k].align.left = table.cells[k].align.forceLeft;
@@ -220,6 +241,8 @@ class ProcessorTable extends Processor {
 				table.cells[k].align.right = table.cells[k].align.forceRight;
 				delete table.cells[k].align.forceRight;
 			}
+			
+			table.cells[k].children = children;
 		});
 		
 		return {
@@ -240,7 +263,8 @@ class ProcessorTable extends Processor {
 			'Escape', 'Footnote', 'Macro', 'Inline', 'Link', 'Brace',
 			
 			'TableRowStart', 'TableRowEnd', 'TableHAlign', 'TableHMerge',
-			'TableVAlignMerge', 'TableDecoration', 'TableDivider', 'TableCaption'
+			'TableVAlignMerge', 'TableDecoration', 'TableDivider', 'TableCaption',
+			'TableColorDecoration'
 		];
 	}
 	

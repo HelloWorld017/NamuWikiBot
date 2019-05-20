@@ -5,6 +5,7 @@ const tokenizers = [
 	new TokenizerRegex('Escape', /\\\\/, null),
 	new TokenizerRegex('Footnote', /\[\*[^ ]*[ ]*(.*?[^\]])[\]]{1}(?!\]+)/),
 	new TokenizerRegex('Macro', /\[([a-z]+)(?:[^\S\r\n]*\((.*?)\)[^\S\r\n]*)?\]/i),
+	new TokenizerRegex('Toc', /\[목차\]/),
 	new TokenizerRegex('Inline', /('''|''|__|--|~~|\^\^|,,)/),
 	
 	new TokenizerRegex('LinkOpen', /\[\[/),
@@ -16,10 +17,10 @@ const tokenizers = [
 	new TokenizerRegexLine('TableRowStart', /^[^\S\r\n]*\|([^\[\]\|]*?)?\|((?:\|\|)*)/),
 	new TokenizerRegexLine('TableRowEnd', /((?:\|\|)+)[^\S\r\n]*$/, true),
 	
-	new TokenizerRegexLine('Quote', /^>(.*)$/),
+	new TokenizerRegexLine('Quote', /^(>+)(.*)$/),
 	new TokenizerRegexLine('Horizontal', /^-{4,9}$/),
 	new TokenizerRegexLine('Annotation', /^##(.*)$/),
-	new TokenizerRegexLine('List', /^([^\S\r\n]+)([1IiAa]\.|\*)([^]*?)\n$/)
+	new TokenizerRegexLine('List', /^([^\S\r\n]+)([1IiAa]\.|\*)((?:#[0-9+])?)([^]*?)$/)
 ];
 
 const tokenizerInternal = [

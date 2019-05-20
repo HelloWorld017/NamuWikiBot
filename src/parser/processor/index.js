@@ -3,7 +3,9 @@ const tokenize = require('../tokenizer');
 const ProcessorBrace = require('./ProcessorBrace');
 const ProcessorInline = require('./ProcessorInline');
 const ProcessorLink = require('./ProcessorLink');
+const ProcessorList = require('./ProcessorList');
 const ProcessorMacro = require('./ProcessorMacro');
+const ProcessorQuote = require('./ProcessorQuote');
 const ProcessorTable = require('./ProcessorTable');
 
 const processors = [
@@ -11,7 +13,9 @@ const processors = [
 	new ProcessorInline(),
 	new ProcessorLink(),
 	new ProcessorMacro(),
-	new ProcessorTable()
+	new ProcessorList(),
+	new ProcessorQuote(),
+	new ProcessorTable(),
 ];
 
 const flatten = tokens => tokens.map(v => v.content).join('');
