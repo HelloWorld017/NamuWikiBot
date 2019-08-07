@@ -4,8 +4,7 @@ const TokenizerRegexLine = require('./TokenizerRegexLine');
 const tokenizers = [
 	new TokenizerRegex('Escape', /\\\\/, null),
 	new TokenizerRegex('Footnote', /\[\*[^ ]*[ ]*(.*?[^\]])[\]]{1}(?!\]+)/),
-	new TokenizerRegex('Macro', /\[([a-z]+)(?:[^\S\r\n]*\((.*?)\)[^\S\r\n]*)?\]/i),
-	new TokenizerRegex('Toc', /\[목차\]/),
+	new TokenizerRegex('Macro', /\[([a-z가-힣]+)(?:[^\S\r\n]*\((.*?)\)[^\S\r\n]*)?\]/i),
 	new TokenizerRegex('Inline', /('''|''|__|--|~~|\^\^|,,)/),
 	
 	new TokenizerRegex('LinkOpen', /\[\[/),

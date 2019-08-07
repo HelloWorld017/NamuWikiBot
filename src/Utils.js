@@ -7,7 +7,8 @@ const Utils = {
 		}
 		
 		return result;
-	}
+	},
+	padn: (str, n, letter = '0') => letter.repeat(Math.max(0, n - str.length)) + str
 };
 
 module.exports = Utils;

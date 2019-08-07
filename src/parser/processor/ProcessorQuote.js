@@ -61,8 +61,7 @@ class ProcessorQuote extends Processor {
 		const rootNode = {
 			name: 'Quote',
 			children: [],
-			content: '',
-			isRoot: true
+			content: ''
 		};
 		let leafNode = rootNode;
 		let previousLevel = 1;
@@ -101,6 +100,7 @@ class ProcessorQuote extends Processor {
 			if(level < previousLevel) {
 				previousLevel = level;
 				leafNode.children = parse(leafNode.children);
+				leafNode.parent.content += leafNode.content;
 				
 				const parent = leafNode.parent;
 				delete leafNode.parent;
@@ -117,14 +117,15 @@ class ProcessorQuote extends Processor {
 					content: text
 				});
 			}
+			leafNode.content += quote.match[0];
 		});
 		
 		if(leafNode.parent) {
 			leafNode.children = parse(leafNode.children);
+			leafNode.parent.content += leafNode.content;
+			
 			delete leafNode.parent;
 		}
-		
-		delete rootNode.isRoot;
 		
 		return {
 			end: end,
