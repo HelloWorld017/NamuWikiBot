@@ -485,9 +485,21 @@ const getNamuwiki = async (url, redirectionCount = 0, waited = false) => {
 
 	if(resp) body = resp.body;
 
-	if(typeof body !== 'string' || body.includes('<!DOCTYPE html>')) {
+	if(typeof body !== 'string') {
 		err = new Error("Not Found");
 		err.status = 404;
+	}
+
+	if(!err) {
+		const $ = cheerio.load(body);
+		const content = $('textarea[readonly]').text();
+
+		if($('title').text().includes('오류') || !content) {
+			err = new Error("Not Found");
+			err.status = 404;
+		} else {
+			body = content;
+		}
 	}
 
 	if(err) {
