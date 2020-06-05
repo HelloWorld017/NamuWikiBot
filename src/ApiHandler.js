@@ -314,9 +314,9 @@ class ApiHandler {
 		if(message.text.startsWith('/nw')){
 			await this.handleWiki(from, chatId, message);
 		}
-		
+
 		if(message.text.startsWith('@namuwikiBot')){
-			await this.handleInline(from, query, id);
+			await this.handleInline(from, chatId, message);
 		}
 	}
 }
