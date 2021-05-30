@@ -6,11 +6,11 @@ module.exports = {
 		"AAQFABPW5b0yAAT1FavQm3UInFMEAAIC",
 		"CAADBQADMAADUZLAVkoN4oAcmBapAg"
 	],
-	userAgent: "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36",
+	userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
 	url: "https://namu.wiki/w/",
 	rawUrl: "https://namu.wiki/raw/",
 	searchUrl: "https://namu.wiki/search/",
-	completeUrl: "https://namu.wiki/complete/",
+	internalUrl: "https://namu.wiki/internal",
 	inlineAmount: 1,
 	branchAmount: 8, //namugazi
 	commandAmount: 10,

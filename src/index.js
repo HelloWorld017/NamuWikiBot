@@ -15,6 +15,7 @@ const fixedURIencode = require('./encoder');
 const remover = require('./remover');
 const config = require('../config/');
 const translation = require('../resources/text.json');
+const Internal = require('./internal');
 const NamuRouter = require('../routes/index');
 
 const apiUrl = 'https://api.telegram.org/bot' + config.token + '/';
