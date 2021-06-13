@@ -1,20 +1,11 @@
-const config = require('../config/');
+const config = require('../config');
 const decryptNamuwikiResponse = require('./snippets/decryptNamuwikiResponse');
 const getNamuwikiNonce = require('./snippets/getNamuwikiNonce');
-const rp = require('request-promise');
+const { namuApiCall } = require('./request');
 
 const Internal = {
 	async getHydratedStates() {
-		const body = await rp({
-			method: 'get',
-			headers: {
-				'accept': 'text/html, application/xhtml+xml, application/xml',
-				'accept-encoding': 'identity',
-				'accept-language': 'ko-KR, ko',
-				'user-agent': config.userAgent
-			},
-			uri: `${config.url}robots.txt`
-		});
+		const { data: body } = await namuApiCall.get(config.url);
 
 		const match = body.match(/INITIAL_STATE={(.*?)}<\/script>/);
 		if (!match) {
@@ -38,7 +29,7 @@ const Internal = {
 
 		const generatedUrl = `${url}?${qs.toString()}`;
 		return {
-			uri: config.internalUrl + generatedUrl,
+			url: config.internalUrl + generatedUrl,
 			method: 'get',
 			headers: {
 				'User-Agent': config.userAgent,
@@ -47,8 +38,7 @@ const Internal = {
 				'X-Riko': state['_c037b411'],
 				'X-Namuwiki-Nonce': getNamuwikiNonce(generatedUrl.toLowerCase())
 			},
-			encoding: null,
-			resolveWithFullResponse: true
+			responseType: 'buffer'
 		};
 	},
 
@@ -60,13 +50,17 @@ const Internal = {
 		return body.toString();
 	},
 
-	async getComplete(state, query) {
-		if (!state) {
-			state = await this.getHydratedStates();
+	async getComplete(query) {
+		if (!this.isStateAvailable()) {
+			this.state = await this.getHydratedStates();
 		}
 
-		const resp = await rp(this.getInternalRequestObject(state, '/Complete', { q: query }));
-		return this.decryptResponse(resp);
+		const { data } = await namuApiCall(this.getInternalRequestObject(this.state, '/Complete', { q: query }));
+		return this.decryptResponse(data);
+	},
+
+	isStateAvailable() {
+		return !this.state || this.state.createdAt + config.maxStateLifetime < Date.now();
 	}
 }
 

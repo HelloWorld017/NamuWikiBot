@@ -9,15 +9,14 @@
   },
   "dependencies": {
     "async": "^1.5.1",
+    "axios": "^0.21.1",
     "body-parser": "^1.15.0",
     "chalk": "^1.1.1",
     "cheerio": "^1.0.0-rc.2",
     "express": "^4.13.4",
     "html-truncate": "^1.2.2",
     "morgan": "^1.7.0",
-    "object-merge": "^2.5.1",
-    "request": "^2.88.0",
-    "request-promise": "^4.2.1"
+    "object-merge": "^2.5.1"
   },
   "repository": {
     "type": "git",

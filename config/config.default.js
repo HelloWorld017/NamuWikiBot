@@ -18,6 +18,7 @@ module.exports = {
 	gcInterval: 60000,
 	requestInterval: 100,
 	overviewLength: 1024,
+	maxStateLifetime: 3600 * 1000,
 	remove: {
 		bold: 'tag',
 		italic: 'tag',

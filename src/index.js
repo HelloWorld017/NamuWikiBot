@@ -7,7 +7,6 @@ const express = require('express');
 const fs = require('fs');
 const http = require('http');
 const logger = require('morgan');
-const rp = require('request-promise')
 const truncate = require('html-truncate');
 const util = require('util');
 
@@ -15,10 +14,10 @@ const fixedURIencode = require('./encoder');
 const remover = require('./remover');
 const config = require('../config/');
 const translation = require('../resources/text.json');
+const { apiCall, namuApiCall, ignoredApiCall } = require('./request');
 const Internal = require('./internal');
 const NamuRouter = require('../routes/index');
 
-const apiUrl = 'https://api.telegram.org/bot' + config.token + '/';
 const app = express();
 const namuRouter = new NamuRouter(config.token);
 
@@ -74,13 +73,7 @@ const handleSearch = async (url, chatId) => {
 	let body = '';
 
 	try {
-		body = await rp({
-			method: 'get',
-			headers: {
-				'User-Agent': config.userAgent
-			},
-			url: `${config.searchUrl}${fixedURIencode(url)}`
-		});
+		body = (await namuApiCall.get(`${config.searchUrl}${fixedURIencode(url)}`).data);
 		const $ = cheerio.load(body);
 		const hrefs = $(searchSelector);
 		const results = [];
@@ -117,7 +110,7 @@ const handleSearch = async (url, chatId) => {
 	}
 };
 
-//Handles /np Commands
+//Handles /nq Commands
 const handleQuery = async (from, chatId, message) => {
 	if(attempt(from)) {
 		await ignoredApiCall('sendMessage', {
@@ -130,19 +123,13 @@ const handleQuery = async (from, chatId, message) => {
 
 	let body;
 	try {
-		body = await rp({
-			method: 'get',
-			headers: {
-				'User-Agent': config.userAgent
-			},
-			url: config.completeUrl + fixedURIencode(message.text.replace(/^\/nq(?:@[a-zA-Z0-9]*)?[ ]*/, ''))
-		});
+		body = await Internal.getComplete(message.text.replace(/^\/nq(?:@[a-zA-Z0-9]*)?[ ]*/, ''));
 	} catch(err) {
 		await logError(err, chatId);
 		return;
 	}
 
-	const arr = handleWikiLinks(chatId, JSON.parse(body));
+	const arr = handleWikiLinks(chatId, body);
 
 	await ignoredApiCall('sendMessage', {
 		chat_id: chatId,
@@ -230,14 +217,7 @@ const handleInline = async (from, query, id) => {
 	let complete = [];
 
 	try {
-		complete = await rp({
-			method: 'get',
-			headers: {
-				'User-Agent': config.userAgent
-			},
-			url: `${config.completeUrl}${fixedURIencode(query)}`,
-			json: true
-		});
+		complete = await Internal.getComplete(query);
 
 		if(!Array.isArray(complete)) {
 			const err = new Error("Returned object is not an array!");
@@ -435,19 +415,6 @@ const attempt = (from) => {
 	return false;
 };
 
-const apiCall = (target, data) => rp({
-	method: 'POST',
-	json: true,
-	formData: data,
-	url: `${apiUrl}${target}`
-});
-
-const ignoredApiCall = async (...args) => {
-	try {
-		return await apiCall(...args);
-	} catch(err) {}
-}
-
 const isEmptyText = (text) => text.trim().length === 0;
 
 let queryQueue = 0;
@@ -469,14 +436,7 @@ const getNamuwiki = async (url, redirectionCount = 0, waited = false) => {
 
 	queryQueue++;
 	try {
-		resp = await rp({
-			method: 'get',
-			headers: {
-				'User-Agent': config.userAgent
-			},
-			url: config.rawUrl + fixedURIencode(url),
-			resolveWithFullResponse: true
-		});
+		resp = await namuApiCall.get(config.rawUrl + fixedURIencode(url));
 	} catch(e) {
 		err = e;
 		err.status = resp ? resp.statusCode : 500;
@@ -484,7 +444,7 @@ const getNamuwiki = async (url, redirectionCount = 0, waited = false) => {
 	}
 	queryQueue--;
 
-	if(resp) body = resp.body;
+	if(resp) body = resp.data;
 
 	if(typeof body !== 'string') {
 		err = new Error("Not Found");
