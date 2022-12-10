@@ -12,7 +12,7 @@
     "body-parser": "^1.15.0",
     "chalk": "^1.1.1",
     "cheerio": "^1.0.0-rc.2",
-    "express": "^4.13.4",
+    "express": "^4.17.3",
     "html-truncate": "^1.2.2",
     "morgan": "^1.7.0",
     "object-merge": "^2.5.1",
